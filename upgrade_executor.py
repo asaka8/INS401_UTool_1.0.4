@@ -64,34 +64,33 @@ class Executor:
 
         # upgrade rtk/ins part of the device
         print('Upgrade strat...')
-        # self.driver.jump2boot(3)
-        # self.driver.shake_hand()
-        # print('rtk part upgrade start')
-        # self.rtk_part_upgrade(self.fw_part_list[0])
-        # time.sleep(0.5)
-        # print('ins part upgrade start')
-        # self.ins_part_upgrade(self.fw_part_list[1])
-        # time.sleep(0.5)
-        # self.driver.jump2app(10)   
-
-        # # # upgrade sdk9100 part of the device
+        self.driver.jump2boot(3)
         self.driver.shake_hand()
+        print('rtk part upgrade start')
+        self.rtk_part_upgrade(self.fw_part_list[0])
+        time.sleep(0.5)
+        print('ins part upgrade start')
+        self.ins_part_upgrade(self.fw_part_list[1])
+        time.sleep(0.5)
+        self.driver.jump2app(2)   
+
+        # upgrade sdk9100 part of the device
+        self.driver.shake_hand() 
         self.driver.sdk_jump2boot(3)
         self.driver.shake_hand()
         print('sdk part upgrade start')
         self.sdk_part_upgrade(self.fw_part_list[2])
         self.driver.sdk_jump2app(3)
-        print('sdk upgrade successed')
+        print('sdk upgrade successed\n')
         
         # upgrade imu part of the device
-        self.driver.shake_hand()
+        self.driver.shake_hand()  
         self.driver.imu_jump2boot(3)
         self.driver.shake_hand()
-        time.sleep(0.5)
         print('imu part upgrade start')
         self.imu_part_upgrade(self.fw_part_list[3])
-        time.sleep(0.5)
-        self.driver.jump2app(3)
+        self.driver.imu_jump2app(3)
+        print('imu upgrade successed')
 
     def rtk_part_upgrade(self, content):
         core = '0'
@@ -99,7 +98,6 @@ class Executor:
         upgrade_flag = 0
         self.driver.before_write_content(core, content_len)
 
-        # self.ether.reset_buffer()
         step = 192
         current_side = self.flag_list[0]
         write_turns = int(content_len/step)
@@ -153,18 +151,15 @@ class Executor:
         current_side = self.flag_list[3] # current_side is an actual side of bin and it will correspond to copy_side
         write_turns = int(content_len/step)
 
-        for _ in trange(write_turns):
+        for i in trange(write_turns):
             target_content = content[copy_side:(copy_side+step)]
-            time.sleep(0.01)
-            self.driver.imu_write_block(step, copy_side, target_content)
-            time.sleep(0.01)
+            self.driver.imu_write_block(step, copy_side, target_content, i)
             copy_side += step
             current_side += step
 
         extract_content_flag = content_len - (step * write_turns)
         extract_content = content[copy_side:(copy_side+extract_content_flag)]
-        self.driver.imu_write_block(extract_content_flag, copy_side, extract_content)
-        print('imu upgrade finished\n')
+        self.driver.imu_write_block(extract_content_flag, copy_side, extract_content, i)
 
     def sdk_part_upgrade(self, content):
         content_len = len(content)
@@ -172,7 +167,8 @@ class Executor:
         if self.driver.sdk_sync() == False:
             print('sdk sync failed')
             self.driver.kill_app(1, 2)
-        # self.driver.flash_write_pre(content)
+        self.driver.flash_write_pre(content)
+        time.sleep(0.1)
         if self.driver.change_buad() == False:
             print('Prepare baudrate change command failed\n')
             self.driver.kill_app(1, 2)

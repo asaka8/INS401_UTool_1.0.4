@@ -18,10 +18,11 @@ class Ethernet_Dev:
         self.src_mac = None
         self.dst_mac = 'FF:FF:FF:FF:FF:FF'
         self.iface = None
+        self.read_data = b''
         self.iface_confirmed = False
-        self.read_data = None
         self.async_sniffer = None
         # self.receive_cache = collections.deque(maxlen=1024*16)
+        self.i = None
 
     # Connect device functions
     def find_device(self):
@@ -87,11 +88,7 @@ class Ethernet_Dev:
 
     # functions to communicate the device (moudle)
     def write(self, data):
-        try:
-            sendp(data, iface=self.iface, verbose=0) 
-            # print(data)
-        except Exception as e:
-            raise
+        sendp(data, iface=self.iface, verbose=0) 
 
     def write_read(self, data, filter_cmd_type=0, timeout=0.5, retry=False):
         if not self.src_mac:
@@ -214,21 +211,6 @@ class Ethernet_Dev:
         time.sleep(1)
 
         if self.iface_confirmed:
-            # self.use_length_as_protocol = True
-            return True
-
-        dst_mac_str = '04:00:00:00:00:04'
-        dst_mac = bytes([int(x, 16) for x in dst_mac_str.split(':')])
-        filter_exp = 'ether src host ' + \
-            dst_mac_str + ' and ether[16:2] == 0x01cc'
-
-        time.sleep(1)
-        self.send_async_shake_hand(
-            self.iface, dst_mac, self.get_src_mac(), filter_exp, True)
-        time.sleep(1)
-
-        if self.iface_confirmed:
-            self.use_length_as_protocol = False
             return True
         else:
             return False
@@ -241,9 +223,9 @@ class Ethernet_Dev:
             prn=self.handle_receive_packet,
             filter=filter)
         async_sniffer.start()
-        time.sleep(0.2)
+        time.sleep(1)
         sendp(command_line, iface=iface, verbose=0)
-        time.sleep(0.5)
+        time.sleep(1)
         async_sniffer.stop()
 
     def confirm_iface(self, iface):
@@ -368,53 +350,57 @@ class Ethernet_Dev:
 
 
     ### on going ###
-    def start_listen_data(self):
-        filter_exp = 'ether src host {}'.format(self.dst_mac) 
-        self.read_data = []
+    def start_listen_data(self, filter_type=None):
+        if filter_type == None:
+            filter_exp = f'ether src host {self.dst_mac}'
+        else:
+            filter_exp = f'ether src host {self.dst_mac}  and ether[16:2] == {filter_type}'
+        
         self.async_sniffer = AsyncSniffer(
-            iface=self.iface, prn=self.handle_catch_packet, filter=filter_exp, store=0)
+            iface=self.iface, prn=self.handle_catch_packet, filter=filter_exp)
         self.async_sniffer.start()
+        time.sleep(0.05)
 
     def read(self):
-        if len(self.read_data) > 0:
-            return self.read_data
+        temp = self.read_data
+        self.read_data = b''
+        if len(temp) > 0:         
+            return temp
+        
         return None
 
     def handle_catch_packet(self, packet):
         self.read_data = bytes(packet)
+        # print(f'{self.i}: {self.read_data}')
+        # print(time.time())
 
-    def read_until(self, check_data, command_type, read_times,  read_len=None):
+    def read_until(self, check_data, command_type, read_times, filter_type=None):
         '''
-        check_data & command_type should input hex list
+        command_type should input hex list
         '''
+        data = None
         is_match = False
-        is_contain = None
         check_type = bytes(COMMAND_START + command_type)
         if isinstance(check_data, list):
             check_data_b = bytes(check_data)
         if isinstance(check_data, bytes):
             check_data_b = check_data
+        if check_data is None:
+            check_data_b = b''
         msg_len = len(check_data_b)
-        self.start_listen_data()
         
         while read_times > 0:
             data = self.read()
             if data is None:
-                time.sleep(0.0001)
+                time.sleep(0.00001)
                 read_times -= 1
                 continue
             else:
-                is_contain = data.find(check_type)
-
-            if is_contain == -1:
-                time.sleep(0.0001)
-                read_times -= 1
-                continue
-            else:
+                self.async_sniffer.stop()
                 break
-        
-        if is_contain is not None:
-            start_postion = is_contain
+
+        if data is not None:
+            start_postion = data.find(check_type)
             packet_data = data[start_postion:start_postion+10+msg_len]
             # print(data.hex())
             # print(packet_data)
@@ -424,6 +410,6 @@ class Ethernet_Dev:
             if msg_payload == check_data_b:
                 is_match = True
 
-        self.async_sniffer.stop()
+        
         return is_match
 
