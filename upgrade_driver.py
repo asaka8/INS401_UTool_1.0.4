@@ -25,7 +25,7 @@ CMD_list = {
     'WP': b'\x08\xaa', # [0x08, 0xaa]
     'IMU_JI': b'\x49\x4a', # [0x49, 0x4a]
     'IMU_JA': b'\x41\x4a', # [0x41, 0x4a]
-    '0a09': b'\x09\x0a',
+    'IMU_GP': b'\x47\x50', # [0x47, 0x50]
     'IMU_WA': b'\x41\x57'} # [0x41, 0x57]
 
 class UpgradeDriver:
@@ -42,8 +42,8 @@ class UpgradeDriver:
             print('Ethernet ping error.')
             return
 
-    def setup(self):
-        fw_file = open('./bin/INS401_28.02.bin', "rb")
+    def setup(self, fw_path):
+        fw_file = open(fw_path, "rb")
         fw_data = fw_file.read()
         # content_len = len(fw_data)
         return fw_data
@@ -153,19 +153,16 @@ class UpgradeDriver:
         command = CMD_list['IMU_JI']
         message_bytes = []
 
-        try:
-            self.ether.start_listen_data()
+        self.ether.start_listen_data(0x4a49)
+        
+        for i in range(3):
             self.ether.send_msg(command, message_bytes)
             result = self.ether.read_until(None, [0x4a, 0x49], 200)
-        except Exception as e:
-            print(e)
-            raise
 
-        # if result[0] != command:
-        if result == True:
-            time.sleep(waiting_time)
-            return
-        
+            if result == True:
+                time.sleep(waiting_time)
+                return
+    
         print('send IMU_JI command failed')
         self.kill_app(1, 2)
 
@@ -173,22 +170,19 @@ class UpgradeDriver:
         command = CMD_list['IMU_JA']
         message_bytes = []
 
-        try:
-            self.ether.start_listen_data()
+        self.ether.start_listen_data(0x4a41)
+        for i in range(3):
             self.ether.send_msg(command, message_bytes)
-            result = self.ether.read_until(None, [0x4a, 0x41], 2000)
-        except Exception as e:
-            print(e)
-            raise
+            result = self.ether.read_until(None, [0x4a, 0x41], 200)
 
-        if result == True:
-            time.sleep(waiting_time)
-            return
+            if result == True:
+                time.sleep(waiting_time)
+                return
         
         print('send IMU_JA command failed')
         self.kill_app(1, 2)
 
-    def imu_write_block(self, data_len, current, data, i):
+    def imu_write_block(self, data_len, current, data):
         command = CMD_list['IMU_WA'] # command 'WA'
         message_bytes = []
         current_bytes = struct.pack('>I', current)
@@ -198,10 +192,9 @@ class UpgradeDriver:
         message_bytes.extend(data)
         # check_data = current_bytes + num_bytes
 
-        self.ether.start_listen_data()
+        self.ether.start_listen_data(0x5741)
         self.ether.send_msg(command, message_bytes)
-        # print(i)
-        result = self.ether.read_until(None, [0x57, 0x41], 200, 0x5741)
+        result = self.ether.read_until(None, [0x57, 0x41], 200)
 
         if result == True:
             return
@@ -267,7 +260,7 @@ class UpgradeDriver:
         change_baud_cmd = [0x71]
         
         for i in range(3):
-            self.ether.start_listen_data()
+            self.ether.start_listen_data(0x07aa)
             self.ether.send_msg(command, change_baud_cmd)
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
             if result == True:
