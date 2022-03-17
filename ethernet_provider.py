@@ -374,7 +374,6 @@ class Ethernet_Dev:
     def handle_catch_packet(self, packet):
         self.read_data = bytes(packet)
 
-
     def read_until(self, check_data, command_type, read_times):
         '''
         command_type should input hex list
