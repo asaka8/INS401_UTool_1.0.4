@@ -359,22 +359,23 @@ class Ethernet_Dev:
         self.async_sniffer = AsyncSniffer(
             iface=self.iface, prn=self.handle_catch_packet, filter=filter_exp)
         self.async_sniffer.start()
-        time.sleep(0.05)
+        time.sleep(0.1)
 
     def read(self):
         temp = self.read_data
         self.read_data = b''
-        if len(temp) > 0:         
+        # self.async_sniffer.stop()
+        if len(temp) > 0: 
+            self.async_sniffer.stop()
             return temp
-        
+
         return None
 
     def handle_catch_packet(self, packet):
         self.read_data = bytes(packet)
-        # print(f'{self.i}: {self.read_data}')
-        # print(time.time())
 
-    def read_until(self, check_data, command_type, read_times, filter_type=None):
+
+    def read_until(self, check_data, command_type, read_times):
         '''
         command_type should input hex list
         '''
@@ -391,25 +392,25 @@ class Ethernet_Dev:
         
         while read_times > 0:
             data = self.read()
+            # print(data)
             if data is None:
                 time.sleep(0.00001)
                 read_times -= 1
                 continue
-            else:
-                self.async_sniffer.stop()
+            elif data is not None:
+                # self.async_sniffer.stop()
                 break
 
-        if data is not None:
-            start_postion = data.find(check_type)
-            packet_data = data[start_postion:start_postion+10+msg_len]
-            # print(data.hex())
-            # print(packet_data)
-            msg_payload = packet_data[8:8+msg_len]
-            # print(msg_payload)
+        if read_times == 0 and data is None:
+            return is_match
+                    
+        start_postion = data.find(check_type)
+        packet_data = data[start_postion:start_postion+10+msg_len]
+        msg_payload = packet_data[8:8+msg_len]
 
-            if msg_payload == check_data_b:
-                is_match = True
 
+        if msg_payload == check_data_b:
+            is_match = True
         
         return is_match
 
