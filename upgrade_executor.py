@@ -11,21 +11,23 @@ from upgrade_driver import UpgradeDriver
 PART_NAME = ['rtk', 'ins', 'sdk', 'imu']
 
 class Executor:
-    def __init__(self):
+    def __init__(self, ver_switch=True):
         self.driver = UpgradeDriver()
         self.ether = Ethernet_Dev()
+        self.ver_switch = ver_switch
         self.is_stop = False
         self.flag_list = []
         self.fw_part_lens_list = []
         self.fw_part_list = []
         
-    def upgrade_work(self):
+    def upgrade_work(self, fw_path = './bin/INS401_v28.03.05_ETHLENGTHFIX+fix-crc-of-IMU-failure.bin'):
         self.driver.sniff_dev()
         self.driver.get_dev_info()
         '''TODO
         parse the response to get info
         '''
-        content = self.driver.setup()
+        # fw_path = './bin/INS401_28.01.09.bin'
+        content = self.driver.setup(fw_path)
         content_len = len(content)
 
         rtk_start_flag = content.find(b'rtk_start:')
@@ -62,6 +64,11 @@ class Executor:
             time.sleep(2)
             self.driver.kill_app(1, 2)
 
+        self.rtk_ins_work()
+        self.sdk_work()
+        self.imu_work()
+
+    def rtk_ins_work(self):
         # upgrade rtk/ins part of the device
         print('Upgrade strat...')
         self.driver.jump2boot(3)
@@ -74,6 +81,7 @@ class Executor:
         time.sleep(0.5)
         self.driver.jump2app(2)   
 
+    def sdk_work(self):
         # upgrade sdk9100 part of the device
         self.driver.shake_hand() 
         self.driver.sdk_jump2boot(3)
@@ -82,7 +90,8 @@ class Executor:
         self.sdk_part_upgrade(self.fw_part_list[2])
         self.driver.sdk_jump2app(3)
         print('sdk upgrade successed\n')
-        
+
+    def imu_work(self):    
         # upgrade imu part of the device
         self.driver.shake_hand()  
         self.driver.imu_jump2boot(3)
@@ -153,13 +162,13 @@ class Executor:
 
         for i in trange(write_turns):
             target_content = content[copy_side:(copy_side+step)]
-            self.driver.imu_write_block(step, copy_side, target_content, i)
+            self.driver.imu_write_block(step, copy_side, target_content)
             copy_side += step
             current_side += step
 
         extract_content_flag = content_len - (step * write_turns)
         extract_content = content[copy_side:(copy_side+extract_content_flag)]
-        self.driver.imu_write_block(extract_content_flag, copy_side, extract_content, i)
+        self.driver.imu_write_block(extract_content_flag, copy_side, extract_content)
 
     def sdk_part_upgrade(self, content):
         content_len = len(content)
@@ -169,15 +178,16 @@ class Executor:
             self.driver.kill_app(1, 2)
         self.driver.flash_write_pre(content)
         time.sleep(0.1)
-        if self.driver.change_buad() == False:
-            print('Prepare baudrate change command failed\n')
-            self.driver.kill_app(1, 2)
-        if self.driver.send_baud(230400) == False:
-            print('Send baudrate command failed\n')
-            self.driver.kill_app(1, 2)
-        if self.driver.baud_check() == False:
-            print('Baudrate check failed\n')
-            self.driver.kill_app(1, 2)
+        if self.ver_switch == False:
+            if self.driver.change_buad() == False:
+                print('Prepare baudrate change command failed\n')
+                self.driver.kill_app(1, 2)
+            if self.driver.send_baud(230400) == False:
+                print('Send baudrate command failed\n')
+                self.driver.kill_app(1, 2)
+            if self.driver.baud_check() == False:
+                print('Baudrate check failed\n')
+                self.driver.kill_app(1, 2)
         if self.driver.is_host_ready() == False:
             print('Host is not ready.\n')
             self.driver.kill_app(1, 2)
@@ -209,6 +219,10 @@ class Executor:
             else:
                 break
 
-a = Executor()
+fw_ver = input('choose Y/N\ncommit FW version, if it before 28.02.03 input Y, else input N\n')
+if fw_ver == 'Y' or fw_ver == 'y':
+    ver_switch = False
+elif fw_ver == 'N' or fw_ver == 'n':
+    ver_switch = True
+a = Executor(ver_switch)
 a.upgrade_work()
-    
