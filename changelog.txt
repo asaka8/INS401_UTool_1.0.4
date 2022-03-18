@@ -11,4 +11,4 @@
 1.0.2：INS401 Firmware versions:
 	1. The bootloader needs to be modified from 115200 to 230400 when sdK9100 is upgraded before 28.02.03.  
 	2. No change is required after 28.02.03.
-	  Currently the distinction is made by manually entering input values before the program runs.  (It will be changed to automatic discrimination in the 		future)  	
+	Currently the distinction is made by manually entering input values before the program runs.  (It will be changed to automatic discrimination in the future)  	
