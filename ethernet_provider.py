@@ -4,6 +4,8 @@ import time
 import struct
 import threading
 import collections
+from cv2 import split
+from numpy import True_
 
 from scapy.all import sendp, sniff, conf, AsyncSniffer
 from scapy.layers.l2 import Ether
@@ -22,7 +24,6 @@ class Ethernet_Dev:
         self.iface_confirmed = False
         self.async_sniffer = None
         # self.receive_cache = collections.deque(maxlen=1024*16)
-        self.i = None
 
     # Connect device functions
     def find_device(self):
@@ -58,12 +59,23 @@ class Ethernet_Dev:
                 packet_length = struct.unpack('<I', packet_raw[4:8])[0]
                 data_buffer = packet_raw[8: 8 + packet_length]
                 info_text = self.format_string(data_buffer)
-                if info_text.find('INS401') > -1:
+                split_text = info_text.split(' ')
+                if info_text.find('INS401') > -1 and len(split_text) > 6:
+                    '''TODO
+                    If lens <=6 output the error info of device
+                    '''
                     # print(info_text)
-                    split_text = info_text.split(' ')
-                    self.model_string = split_text[0]
-                    # self.serial_number = int(split_text[2])
-                    # self.app_version = split_text[7]
+                    serial_number = int(split_text[2])
+                    hardware_ver = split_text[4]
+                    rtk_ins_app_ver = split_text[7]
+                    bootloader = split_text[9]
+                    imu_app_ver = split_text[12]
+                    sta9100_ver = split_text[15]
+                    output_msg = f'\033[0;32mINS401 SN:{serial_number}  Hardware Version:{hardware_ver}  RTK_INS App:{rtk_ins_app_ver}  Bottloader:{bootloader}\nIMU APP Version:{imu_app_ver}  STA9100 Version:{sta9100_ver}\033[0;37m'
+                    print(output_msg)
+                    
+                    return True
+                else:
                     return True
         return False
 
@@ -245,7 +257,7 @@ class Ethernet_Dev:
         if self.iface_confirmed:
             self.iface = iface[0]
             self.src_mac = iface[1]
-            print('[NetworkCard]', self.iface)
+            print('\033[0;32m[NetworkCard]', self.iface)
 
     def get_network_card(self):
         network_card_list = []
