@@ -143,7 +143,6 @@ class UpgradeDriver:
         try:
             self.ether.send_msg(command, message_bytes)
             if upgrade_flag == 0:
-                # print('Bootloader is trying to delet the flash...')
                 time.sleep(20)
         except Exception as ex:
             print('Write Firmware message Failed')
