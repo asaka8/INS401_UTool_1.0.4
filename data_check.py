@@ -10,7 +10,7 @@ output_packet_list = {
     'gnss_data': [0x020a, 77],
     'ins_data': [0x030a, 110],
     'dm_data': [0x050a, 22]
-}
+}  # packet type dict
 
 class CheckData:
     def __init__(self):
@@ -21,16 +21,23 @@ class CheckData:
         return
 
     def read_data(self):
+        '''
+        get raw data from device
+        '''
         self.connect()
         while True:
-            self.ether.start_listen_data()
+            self.ether.start_listen_data() # can add filter type in this function
             data = self.ether.read()
-            data = data.hex()
+ 
             if data is not None:
+                data = data.hex()
                 data_lens = len(data)
-                print(f'{data}\n{data_lens}')
+                # print(f'{data}\n{data_lens}')
+                return data, data_lens
     
     def get_imu_data(self):
+        '''output IMU data
+        '''
         command_type = output_packet_list['imu_data'][0]
         payload_lens = output_packet_list['imu_data'][1]
         while True:
@@ -42,6 +49,8 @@ class CheckData:
                 print(latest)
 
     def get_gnss_data(self):
+        '''output GNSS data
+        '''
         command_type = output_packet_list['gnss_data'][0]
         payload_lens = output_packet_list['gnss_data'][1]
         while True:
@@ -53,6 +62,8 @@ class CheckData:
                 print(latest)
 
     def get_ins_data(self):
+        '''output INS data
+        '''
         command_type = output_packet_list['ins_data'][0]
         payload_lens = output_packet_list['ins_data'][1]
         while True:
@@ -64,6 +75,8 @@ class CheckData:
                 print(latest)
     
     def get_dm_data(self):
+        '''output DM data
+        '''
         command_type = output_packet_list['dm_data'][0]
         payload_lens = output_packet_list['dm_data'][1]
         while True:
@@ -152,6 +165,8 @@ class CheckData:
         imu_temperature = data[3]
         mcu_temperature = data[4]
         gnss_chip_temperature = data[5]
+        return gps_week, gps_millisecs, device_status_bit_field, imu_temperature, mcu_temperature,\
+            gnss_chip_temperature
 
     def start(self):
         self.connect()
