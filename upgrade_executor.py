@@ -20,7 +20,7 @@ class Executor:
         self.fw_part_lens_list = []
         self.fw_part_list = []
         
-    def upgrade_work(self, fw_path = './bin/INS401_v28.03.05_ETHLENGTHFIX+fix-crc-of-IMU-failure.bin'):
+    def upgrade_work(self, fw_path = './bin/INS401_v28.03.bin'):
         self.driver.sniff_dev()
         self.driver.get_dev_info()
         '''TODO
@@ -30,21 +30,77 @@ class Executor:
         content = self.driver.setup(fw_path)
         content_len = len(content)
 
+        # make firmware part flag list
         rtk_start_flag = content.find(b'rtk_start:')
+        if rtk_start_flag != -1:
+            self.flag_list.append(rtk_start_flag)
         ins_start_flag = content.find(b'ins_start:')
+        if ins_start_flag != -1:
+            self.flag_list.append(ins_start_flag)
         sdk_start_flag = content.find(b'sdk_start:')
+        if sdk_start_flag != -1:
+            self.flag_list.append(sdk_start_flag)
+        imu_boot_start_flag = content.find(b'imu_boot_start:')
+        if imu_boot_start_flag != -1:
+            self.flag_list.append(imu_boot_start_flag)
         imu_start_flag = content.find(b'imu_start:')
-        self.flag_list = [rtk_start_flag, ins_start_flag, sdk_start_flag, imu_start_flag]
+        if imu_start_flag != -1:
+            self.flag_list.append(imu_start_flag)
 
-        rtk_data_lens = struct.unpack('<I', content[(rtk_start_flag+10):(rtk_start_flag+14)])[0]
-        ins_data_lens = struct.unpack('<I', content[(ins_start_flag+10):(ins_start_flag+14)])[0] 
-        sdk_data_lens = struct.unpack('<I', content[(sdk_start_flag+10):(sdk_start_flag+14)])[0]
-        imu_data_lens = struct.unpack('<I', content[(imu_start_flag+10):(imu_start_flag+14)])[0]
-        self.fw_part_lens_list = [rtk_data_lens, ins_data_lens, sdk_data_lens, imu_data_lens]
+        # make firmware lens list
+        if rtk_start_flag != -1:
+            rtk_data_lens = struct.unpack('<I', content[(rtk_start_flag+10):(rtk_start_flag+14)])[0]
+            self.fw_part_lens_list.append(rtk_data_lens)
+        if ins_start_flag != -1:
+            ins_data_lens = struct.unpack('<I', content[(ins_start_flag+10):(ins_start_flag+14)])[0] 
+            self.fw_part_lens_list.append(ins_data_lens)
+        if sdk_data_lens != -1:
+            sdk_data_lens = struct.unpack('<I', content[(sdk_start_flag+10):(sdk_start_flag+14)])[0]
+            self.fw_part_lens_list.append(sdk_data_lens)
+        if imu_boot_start_flag != -1:
+            imu_boot_data_lens = struct.unpack('<I', content[(imu_boot_start_flag+10):(imu_boot_start_flag+14)])[0]
+            self.fw_part_lens_list.append(imu_boot_data_lens)
+        if imu_start_flag != -1:
+            imu_data_lens = struct.unpack('<I', content[(imu_start_flag+10):(imu_start_flag+14)])[0]
+            self.fw_part_lens_list.append(imu_data_lens)
 
-        rtk_bin_data = content[(rtk_start_flag+14):ins_start_flag]
-        ins_bin_data = content[(ins_start_flag+14):sdk_start_flag]
-        sdk_bin_data = content[(sdk_start_flag+14):imu_start_flag]
+        # make firmware data list
+        if rtk_start_flag != -1 and ins_start_flag != -1:
+            rtk_bin_data = content[(rtk_start_flag+14):ins_start_flag]
+            self.fw_part_list.append(rtk_bin_data)
+        elif rtk_start_flag != -1 and sdk_start_flag != -1:
+            rtk_bin_data = content[(rtk_start_flag+14):sdk_start_flag]
+            self.fw_part_list.append(rtk_bin_data)
+        elif rtk_start_flag != -1 and imu_boot_start_flag != -1:
+            rtk_bin_data = content[(rtk_start_flag+14):imu_boot_start_flag]
+            self.fw_part_list.append(rtk_bin_data)
+        elif rtk_start_flag != -1 and imu_start_flag != -1:
+            rtk_bin_data = content[(rtk_start_flag+14):imu_start_flag]
+            self.fw_part_list.append(rtk_bin_data)
+        elif rtk_start_flag != -1:
+            rtk_bin_data = content[(rtk_start_flag+14):content_len]
+        
+        if ins_start_flag != -1 and sdk_start_flag != -1:
+            ins_bin_data = content[(ins_start_flag+14):sdk_start_flag]
+            self.fw_part_list.append(ins_bin_data)
+        elif ins_start_flag != -1 and imu_boot_start_flag != -1:
+            ins_bin_data = content[(ins_start_flag+14):imu_boot_start_flag]
+            self.fw_part_list.append(ins_bin_data)
+        elif ins_start_flag != -1 and imu_start_flag != -1:
+            ins_bin_data = content[(ins_start_flag+14):imu_start_flag]
+            self.fw_part_list.append(ins_bin_data)
+
+        if sdk_start_flag != -1 and imu_boot_start_flag != -1:
+            sdk_bin_data = content[(sdk_start_flag+14):imu_boot_start_flag]
+            self.fw_part_list.append(sdk_bin_data)
+        elif sdk_start_flag != -1 and imu_start_flag != -1:
+            sdk_bin_data = content[(sdk_start_flag+14):imu_start_flag]
+            self.fw_part_list.append(sdk_bin_data)
+
+        if imu_boot_start_flag != -1 and imu_start_flag != -1:
+            imu_boot_bin_data = content[(imu_boot_start_flag+14):imu_boot_start_flag]
+            self.fw_part_list.append(imu_boot_bin_data)
+        
         imu_bin_data = content[(imu_start_flag+14):content_len]
         self.fw_part_list = [rtk_bin_data, ins_bin_data, sdk_bin_data, imu_bin_data]
 
