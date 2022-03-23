@@ -65,6 +65,7 @@ class Executor:
             self.fw_part_lens_list.append(imu_data_lens)
 
         # make firmware data list
+        # rtk firmware part
         if rtk_start_flag != -1 and ins_start_flag != -1:
             rtk_bin_data = content[(rtk_start_flag+14):ins_start_flag]
             self.fw_part_list.append(rtk_bin_data)
@@ -79,7 +80,8 @@ class Executor:
             self.fw_part_list.append(rtk_bin_data)
         elif rtk_start_flag != -1:
             rtk_bin_data = content[(rtk_start_flag+14):content_len]
-        
+
+        # ins firmware part       
         if ins_start_flag != -1 and sdk_start_flag != -1:
             ins_bin_data = content[(ins_start_flag+14):sdk_start_flag]
             self.fw_part_list.append(ins_bin_data)
@@ -89,22 +91,33 @@ class Executor:
         elif ins_start_flag != -1 and imu_start_flag != -1:
             ins_bin_data = content[(ins_start_flag+14):imu_start_flag]
             self.fw_part_list.append(ins_bin_data)
+        elif ins_start_flag != -1:
+            ins_bin_data = content[(ins_start_flag+14):content_len]
+            self.fw_part_list.append(ins_bin_data)
 
+        # sdk firmware part
         if sdk_start_flag != -1 and imu_boot_start_flag != -1:
             sdk_bin_data = content[(sdk_start_flag+14):imu_boot_start_flag]
             self.fw_part_list.append(sdk_bin_data)
         elif sdk_start_flag != -1 and imu_start_flag != -1:
             sdk_bin_data = content[(sdk_start_flag+14):imu_start_flag]
             self.fw_part_list.append(sdk_bin_data)
+        elif sdk_start_flag != -1:
+            sdk_bin_data = content[(sdk_start_flag+14):content_len]
+            self.fw_part_list.append(sdk_bin_data)
 
+        # imu bootloader firmware part
         if imu_boot_start_flag != -1 and imu_start_flag != -1:
             imu_boot_bin_data = content[(imu_boot_start_flag+14):imu_boot_start_flag]
             self.fw_part_list.append(imu_boot_bin_data)
+        if imu_boot_start_flag != -1:
+            imu_boot_bin_data = content[(imu_boot_start_flag+14):imu_boot_bin_data]
+            self.fw_part_list.append(imu_boot_bin_data)
         
+        # imu app firmware part
         imu_bin_data = content[(imu_start_flag+14):content_len]
         self.fw_part_list = [rtk_bin_data, ins_bin_data, sdk_bin_data, imu_bin_data]
 
-        # a = self.driver.get_bin_info_list(len(sdk_bin_data), sdk_bin_data)
 
         pass_time = 0
         for i in range(len(self.fw_part_list)):
