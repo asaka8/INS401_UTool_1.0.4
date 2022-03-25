@@ -8,7 +8,7 @@ from tqdm import trange
 from ethernet_provider import Ethernet_Dev
 from upgrade_driver import UpgradeDriver
 
-PART_NAME = ['rtk', 'ins', 'sdk', 'imu']
+PART_NAME = ['rtk', 'ins', 'sdk', 'imu_boot', 'imu']
 
 class Executor:
     def __init__(self, ver_switch=True):
@@ -16,11 +16,12 @@ class Executor:
         self.ether = Ethernet_Dev()
         self.ver_switch = ver_switch
         self.is_stop = False
+        self.part_name_list = []
         self.flag_list = []
         self.fw_part_lens_list = []
         self.fw_part_list = []
         
-    def upgrade_work(self, fw_path = './bin/INS401_v28.03.bin'):
+    def upgrade_work(self, fw_path = './bin/INS401_28.03a.bin'):
         self.driver.sniff_dev()
         self.driver.get_dev_info()
         '''TODO
@@ -34,18 +35,23 @@ class Executor:
         rtk_start_flag = content.find(b'rtk_start:')
         if rtk_start_flag != -1:
             self.flag_list.append(rtk_start_flag)
+            self.part_name_list.append('rtk')
         ins_start_flag = content.find(b'ins_start:')
         if ins_start_flag != -1:
             self.flag_list.append(ins_start_flag)
+            self.part_name_list.append('ins')
         sdk_start_flag = content.find(b'sdk_start:')
         if sdk_start_flag != -1:
             self.flag_list.append(sdk_start_flag)
+            self.part_name_list.append('sdk')
         imu_boot_start_flag = content.find(b'imu_boot_start:')
         if imu_boot_start_flag != -1:
             self.flag_list.append(imu_boot_start_flag)
+            self.part_name_list.append('imu_boot')
         imu_start_flag = content.find(b'imu_start:')
         if imu_start_flag != -1:
             self.flag_list.append(imu_start_flag)
+            self.part_name_list.append('imu')
 
         # make firmware lens list
         if rtk_start_flag != -1:
@@ -54,11 +60,12 @@ class Executor:
         if ins_start_flag != -1:
             ins_data_lens = struct.unpack('<I', content[(ins_start_flag+10):(ins_start_flag+14)])[0] 
             self.fw_part_lens_list.append(ins_data_lens)
-        if sdk_data_lens != -1:
+        if sdk_start_flag != -1:
             sdk_data_lens = struct.unpack('<I', content[(sdk_start_flag+10):(sdk_start_flag+14)])[0]
             self.fw_part_lens_list.append(sdk_data_lens)
         if imu_boot_start_flag != -1:
-            imu_boot_data_lens = struct.unpack('<I', content[(imu_boot_start_flag+10):(imu_boot_start_flag+14)])[0]
+            # imu_boot_data_lens = struct.unpack('<I', content[(imu_boot_start_flag+14):(imu_boot_start_flag+18)])[0]
+            imu_boot_data_lens = len(content[(imu_boot_start_flag+19):imu_start_flag])
             self.fw_part_lens_list.append(imu_boot_data_lens)
         if imu_start_flag != -1:
             imu_data_lens = struct.unpack('<I', content[(imu_start_flag+10):(imu_start_flag+14)])[0]
@@ -108,16 +115,16 @@ class Executor:
 
         # imu bootloader firmware part
         if imu_boot_start_flag != -1 and imu_start_flag != -1:
-            imu_boot_bin_data = content[(imu_boot_start_flag+14):imu_boot_start_flag]
+            imu_boot_bin_data = content[(imu_boot_start_flag+19):imu_start_flag]
             self.fw_part_list.append(imu_boot_bin_data)
-        if imu_boot_start_flag != -1:
-            imu_boot_bin_data = content[(imu_boot_start_flag+14):imu_boot_bin_data]
+        elif imu_boot_start_flag != -1:
+            imu_boot_bin_data = content[(imu_boot_start_flag+19):content_len]
             self.fw_part_list.append(imu_boot_bin_data)
         
         # imu app firmware part
-        imu_bin_data = content[(imu_start_flag+14):content_len]
-        self.fw_part_list = [rtk_bin_data, ins_bin_data, sdk_bin_data, imu_bin_data]
-
+        if imu_start_flag != -1:
+            imu_bin_data = content[(imu_start_flag+14):content_len]
+            self.fw_part_list.append(imu_bin_data)
 
         pass_time = 0
         for i in range(len(self.fw_part_list)):
@@ -142,31 +149,43 @@ class Executor:
         print('Upgrade strat...')
         self.driver.jump2boot(3)
         self.driver.shake_hand()
-        print('rtk part upgrade start')
-        self.rtk_part_upgrade(self.fw_part_list[0])
+        if 'rtk' in self.part_name_list:
+            rtk_part_postion = self.part_name_list.index('rtk')
+            print('rtk part upgrade start')
+            self.rtk_part_upgrade(self.fw_part_list[rtk_part_postion])
         time.sleep(0.5)
-        print('ins part upgrade start')
-        self.ins_part_upgrade(self.fw_part_list[1])
+        if 'ins' in self.part_name_list:
+            ins_part_postion = self.part_name_list.index('ins')
+            print('ins part upgrade start')
+            self.ins_part_upgrade(self.fw_part_list[ins_part_postion])
         time.sleep(0.5)
         self.driver.jump2app(2)   
 
     def sdk_work(self):
         # upgrade sdk9100 part of the device
-        self.driver.shake_hand() 
-        self.driver.sdk_jump2boot(3)
-        self.driver.shake_hand()
-        print('sdk part upgrade start')
-        self.sdk_part_upgrade(self.fw_part_list[2])
-        self.driver.sdk_jump2app(3)
-        print('sdk upgrade successed\n')
+        if 'sdk' in self.part_name_list:
+            self.driver.shake_hand() 
+            self.driver.sdk_jump2boot(3)
+            self.driver.shake_hand()
+            sdk_part_postion = self.part_name_list.index('sdk')
+            print('sdk part upgrade start')
+            self.sdk_part_upgrade(self.fw_part_list[sdk_part_postion])
+            self.driver.sdk_jump2app(3)
+            print('sdk upgrade successed\n')
 
     def imu_work(self):    
         # upgrade imu part of the device
-        self.driver.shake_hand()  
+        self.driver.shake_hand()
         self.driver.imu_jump2boot(3)
         self.driver.shake_hand()
-        print('imu part upgrade start')
-        self.imu_part_upgrade(self.fw_part_list[3])
+        if 'imu_boot' in self.part_name_list:
+            imu_boot_part_position = self.part_name_list.index('imu_boot')
+            print('imu boot part upgrade start')
+            self.imu_part_upgrade(self.fw_part_list[imu_boot_part_position])
+        if 'imu' in self.part_name_list:
+            imu_part_position = self.part_name_list.index('imu')
+            print('imu part upgrade start')
+            self.imu_part_upgrade(self.fw_part_list[imu_part_position])
         self.driver.imu_jump2app(3)
         print('imu upgrade successed')
 
