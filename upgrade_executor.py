@@ -182,6 +182,7 @@ class Executor:
             imu_boot_part_position = self.part_name_list.index('imu_boot')
             print('imu boot part upgrade start')
             self.imu_part_upgrade(self.fw_part_list[imu_boot_part_position])
+            print('imu boot part upgrade successed\n')
         if 'imu' in self.part_name_list:
             imu_part_position = self.part_name_list.index('imu')
             print('imu part upgrade start')
