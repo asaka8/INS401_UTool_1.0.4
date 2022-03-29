@@ -257,7 +257,7 @@ class Ethernet_Dev:
         if self.iface_confirmed:
             self.iface = iface[0]
             self.src_mac = iface[1]
-            print('\033[0;32m[NetworkCard]', self.iface)
+            print(f'\033[0;32m[NetworkCard]{self.iface}\033[0;37m')
 
     def get_network_card(self):
         network_card_list = []

@@ -21,7 +21,7 @@ class Executor:
         self.fw_part_lens_list = []
         self.fw_part_list = []
         
-    def upgrade_work(self, fw_path = './bin/INS401_28.03a.bin'):
+    def upgrade_work(self, fw_path = './bin/INS401_28.02.bin'):
         self.driver.sniff_dev()
         self.driver.get_dev_info()
         '''TODO
@@ -244,6 +244,7 @@ class Executor:
 
     def imu_part_upgrade(self, content):
         content_len = len(content)
+        upgrade_flag = 0
         step = 192
         copy_side = 0 # just a fake side to cut content
         current_side = self.flag_list[3] # current_side is an actual side of bin and it will correspond to copy_side
@@ -251,13 +252,14 @@ class Executor:
 
         for i in trange(write_turns):
             target_content = content[copy_side:(copy_side+step)]
-            self.driver.imu_write_block(step, copy_side, target_content)
+            self.driver.imu_write_block(step, copy_side, upgrade_flag, target_content)
             copy_side += step
             current_side += step
+            upgrade_flag += 1
 
         extract_content_flag = content_len - (step * write_turns)
         extract_content = content[copy_side:(copy_side+extract_content_flag)]
-        self.driver.imu_write_block(extract_content_flag, copy_side, extract_content)
+        self.driver.imu_write_block(extract_content_flag, copy_side, upgrade_flag, extract_content)
 
     def sdk_part_upgrade(self, content):
         content_len = len(content)
@@ -289,12 +291,14 @@ class Executor:
         if self.driver.send_bin_info(bin_info_list) == False:
             print('Send binary info failed')
             self.driver.kill_app(1, 2)
-        for i in range(2):
+        for i in range(3):
             result = self.driver.wait()
             if i == 0 and result == False:
                 print('Wait devinit failed')
             elif i == 1 and result == False:
                 print('Wait erase failed')
+
+        time.sleep(5)
 
         if self.driver.flash_write(content_len, content) == False:
             print('Write app bin failed')
@@ -313,5 +317,8 @@ if fw_ver == 'Y' or fw_ver == 'y':
     ver_switch = False
 elif fw_ver == 'N' or fw_ver == 'n':
     ver_switch = True
+else:
+    ver_switch = True
+
 a = Executor(ver_switch)
 a.upgrade_work()
