@@ -142,12 +142,9 @@ class UpgradeDriver:
         message_bytes.extend(struct.pack('>I', num_bytes))
         message_bytes.extend(data)
         
-        try:
-            self.ether.send_msg(command, message_bytes)
-            if upgrade_flag == 0:
-                time.sleep(20)
-        except Exception as ex:
-            print('Write Firmware message Failed')
+        self.ether.send_msg(command, message_bytes)
+        if upgrade_flag == 0:
+            time.sleep(20)
 
     # IMU upgrade protocol
     def imu_jump2boot(self, waiting_time):
@@ -158,14 +155,15 @@ class UpgradeDriver:
         
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
-            result = self.ether.read_until(None, [0x4a, 0x49], 200)
+            result = self.ether.read_until(None, [0x4a, 0x49], 2000)
 
             if result == True:
                 time.sleep(waiting_time)
                 return
-    
-        print('send IMU_JI command failed')
-        self.kill_app(1, 2)
+        
+        if result == False:
+            print('send IMU_JI command failed')
+            self.kill_app(1, 2)
 
     def imu_jump2app(self, waiting_time):
         command = CMD_list['IMU_JA']
@@ -174,7 +172,7 @@ class UpgradeDriver:
         self.ether.start_listen_data(0x4a41)
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
-            result = self.ether.read_until(None, [0x4a, 0x41], 200)
+            result = self.ether.read_until(None, [0x4a, 0x41], 2000)
 
             if result == True:
                 time.sleep(waiting_time)
@@ -196,7 +194,7 @@ class UpgradeDriver:
         self.ether.start_listen_data(0x5741)
         self.ether.send_msg(command, message_bytes)
         if upgrade_flag == 0:
-            time.sleep(2)
+            time.sleep(5)
         result = self.ether.read_until(None, [0x57, 0x41], 2000)
 
         if result == True:
@@ -213,7 +211,7 @@ class UpgradeDriver:
         self.ether.start_listen_data(0x05aa)
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
-            result = self.ether.read_until(None, [0x05, 0xaa], 200)
+            result = self.ether.read_until(None, [0x05, 0xaa], 2000)
             if result == True:
                 time.sleep(waiting_time)
                 return
@@ -229,7 +227,7 @@ class UpgradeDriver:
         self.ether.start_listen_data(0x06aa)
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
-            result = self.ether.read_until(None, [0x06, 0xaa], 200)
+            result = self.ether.read_until(None, [0x06, 0xaa], 2000)
             if result == True:
                 time.sleep(waiting_time)
                 return
@@ -265,10 +263,8 @@ class UpgradeDriver:
             self.ether.send_msg(command, change_baud_cmd)
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
             if result == True:
-                break
-            elif i == 2:
-                return False
-        return True
+                return result
+        return result
 
     def send_baud(self, baud_int):
         command = b'\x07\xaa'
@@ -280,10 +276,8 @@ class UpgradeDriver:
             self.ether.send_msg(command, baud_list)
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
             if result == True:
-                break
-            elif i == 2:
-                return False
-        return True
+                return result
+        return result
 
     def baud_check(self):
         command = b'\x07\xaa'
@@ -294,10 +288,8 @@ class UpgradeDriver:
             self.ether.send_msg(command, check_baud)
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
             if result == True:
-                break
-            elif i == 2:
-                return False
-        return True
+                return result
+        return result
 
     def is_host_ready(self):
         command = b'\x07\xaa'

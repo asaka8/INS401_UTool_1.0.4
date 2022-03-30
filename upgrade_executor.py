@@ -21,7 +21,7 @@ class Executor:
         self.fw_part_lens_list = []
         self.fw_part_list = []
         
-    def upgrade_work(self, fw_path = './bin/INS401_28.02.bin'):
+    def upgrade_work(self, fw_path = './bin/INS401_28.03a.bin'):
         self.driver.sniff_dev()
         self.driver.get_dev_info()
         '''TODO
@@ -175,8 +175,9 @@ class Executor:
 
     def imu_work(self):    
         # upgrade imu part of the device
+        self.driver.reset_device()
         self.driver.shake_hand()
-        self.driver.imu_jump2boot(3)
+        self.driver.imu_jump2boot(8)
         self.driver.shake_hand()
         if 'imu_boot' in self.part_name_list:
             imu_boot_part_position = self.part_name_list.index('imu_boot')
@@ -291,7 +292,7 @@ class Executor:
         if self.driver.send_bin_info(bin_info_list) == False:
             print('Send binary info failed')
             self.driver.kill_app(1, 2)
-        for i in range(3):
+        for i in range(2):
             result = self.driver.wait()
             if i == 0 and result == False:
                 print('Wait devinit failed')
