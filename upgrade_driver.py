@@ -35,48 +35,6 @@ class UpgradeDriver:
     def __init__(self):
         self.ether = Ethernet_Dev()
 
-    def sniff_dev(self):
-        result = self.ether.find_device()
-        if result != True:
-            return
-        time.sleep(1)
-        result = self.ether.ping_device()
-        if result[0] == True:
-            print(result[1])
-            return
-        else:
-            self.kill_app(1, 2)
-
-    def fw_content_setup(self, fw_path):
-        fw_file = open(fw_path, "rb")
-        fw_data = fw_file.read()
-        # content_len = len(fw_data)
-        return fw_data
-
-    def get_dev_info(self):
-        command = CMD_list['OR']
-        message_bytes = []
-        self.ether.send_msg(command, message_bytes)
-        time.sleep(0.5)
-
-        result = self.ether.write_read_response(command, message=[])
-        data = result[2]
-
-        return data
-
-    def get_rtk_ins_version(self):
-        result = self.ether.ping_device()
-        if result[2] != None:
-            version_num = int(result[2].replace('.', ''))
-        else:
-            error_print(f'RTK/INS APP INFO ERROR')
-            self.kill_app(1, 2)
-        
-        if version_num < 280203:
-            return True
-        else:
-            return False
-
     # RTK/INS upgrade protocol
     def shake_hand(self, retry_times=10):
         time.sleep(2)
@@ -460,6 +418,52 @@ class UpgradeDriver:
     def flash_restart(self):
         self.ether.start_listen_data()
         return self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
+
+
+    '''other function
+    '''
+    def sniff_dev(self):
+        result = self.ether.find_device()
+        if result != True:
+            return
+        time.sleep(1)
+        result = self.ether.ping_device()
+        if result[0] == True:
+            print(result[1])
+            return
+        else:
+            self.kill_app(1, 2)
+
+    def fw_content_setup(self, fw_path):
+        fw_file = open(fw_path, "rb")
+        fw_data = fw_file.read()
+        # content_len = len(fw_data)
+        return fw_data
+
+    def get_dev_info(self):
+        command = CMD_list['OR']
+        message_bytes = []
+        self.ether.send_msg(command, message_bytes)
+        time.sleep(0.5)
+
+        result = self.ether.write_read_response(command, message=[])
+        data = result[2]
+
+        return data
+
+    def get_rtk_ins_version(self):
+        result = self.ether.ping_device()
+        if result[2] != None:
+            version_num = int(result[2].replace('.', ''))
+        else:
+            error_print(f'RTK/INS APP INFO ERROR')
+            self.kill_app(1, 2)
+        
+        if version_num < 280203:
+            return True
+        else:
+            return False
+
 
     # reset the device
     def reset_device(self):
