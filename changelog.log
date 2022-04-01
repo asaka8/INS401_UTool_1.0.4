@@ -4,19 +4,19 @@
 	3. the IMU upgrade failed to return the command
 	
 
-1.0.1：Fixed some bugs in version 1.0, and optimized the program.  
+1.0.1: Fixed some bugs in version 1.0, and optimized the program.  
 	1. Shorten the upgrade time.
 	2. Add read function in Ethernet communication module to prepare for data communication.  
 	3. Modified the operation logic of the read until function.	
 
 
-1.0.2：INS401 Firmware versions:
+1.0.2: INS401 Firmware versions:
 	1. The bootloader needs to be modified from 115200 to 230400 when sdK9100 is upgraded before 28.02.03.  
 	2. No change is required after 28.02.03.
 	Currently the distinction is made by manually entering input values before the program runs.  (It will be changed to automatic discrimination in the future)  
 
 
-1.0.3：New function:
+1.0.3: New function:
 	1. IMU_boot upgrade supported
 	2. Automatically identify all identifier bits in the firmware and upgrade each part in sequence
            BUG fixed:
@@ -24,8 +24,14 @@
 	2. Upgrade command self-check failed, but program still continue run
 
 
-1.0.4：Fixed some bugs:
+1.0.4: Fixed some bugs:
 	1. After upgrade New FW(>28.02.03) SDK may not work
 	2. Sometimes IMU can not jump to bootloader
-           Optimized the program:
-	1. Optimized redundant threads in the program
+        Optimized the program:
+		1. Optimized redundant threads in the program
+
+
+1.0.5: optimized the program
+	1. Added the function to automatically determine whether the SDK baud rate changes during the upgrade  
+	2. The output mode of the information is optimized, and different colors are used to distinguish the information of different nature
+	3. The structure of some programs was adjusted
