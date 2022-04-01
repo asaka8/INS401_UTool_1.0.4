@@ -143,6 +143,7 @@ class Upgrade_Center:
         
 
     def upgrade_start(self):
+        self.upgrade_work_generator()
         self.rtk_ins_work()
         self.sdk_work()
         self.imu_work()
@@ -319,4 +320,4 @@ class Upgrade_Center:
 
 if __name__ == '__main__':
     upgrade = Upgrade_Center()
-    upgrade.upgrade_work()
+    upgrade.upgrade_start()
