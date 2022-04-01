@@ -40,11 +40,13 @@ class UpgradeDriver:
             return
         time.sleep(1)
         result = self.ether.ping_device()
-        if result != True:
-            print('Ethernet ping error.')
+        if result[0] == True:
+            print(result[1])
             return
+        else:
+            self.kill_app(1, 2)
 
-    def setup(self, fw_path):
+    def fw_content_setup(self, fw_path):
         fw_file = open(fw_path, "rb")
         fw_data = fw_file.read()
         # content_len = len(fw_data)
@@ -62,6 +64,19 @@ class UpgradeDriver:
         except Exception as e:
             print(e)
             raise
+
+    def get_rtk_ins_version(self):
+        result = self.ether.ping_device()
+        if result[2] != None:
+            version_num = int(result[2].replace('.', ''))
+        else:
+            print(f'\033[0;31mRTK/INS APP INFO ERROR\033[0;37m')
+            self.kill_app(1, 2)
+        
+        if version_num < 280203:
+            return True
+        else:
+            return False
 
     # RTK/INS upgrade protocol
     def shake_hand(self, retry_times=10):

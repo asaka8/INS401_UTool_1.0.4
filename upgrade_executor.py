@@ -10,11 +10,11 @@ from upgrade_driver import UpgradeDriver
 
 PART_NAME = ['rtk', 'ins', 'sdk', 'imu_boot', 'imu']
 
-class Executor:
-    def __init__(self, ver_switch=True):
+class Upgrade_Center:
+    def __init__(self):
         self.driver = UpgradeDriver()
         self.ether = Ethernet_Dev()
-        self.ver_switch = ver_switch
+        self.set_buad = False
         self.is_stop = False
         self.part_name_list = []
         self.flag_list = []
@@ -28,7 +28,7 @@ class Executor:
         parse the response to get info
         '''
         # fw_path = './bin/INS401_28.01.09.bin'
-        content = self.driver.setup(fw_path)
+        content = self.driver.fw_content_setup(fw_path)
         content_len = len(content)
 
         # make firmware part flag list
@@ -159,7 +159,8 @@ class Executor:
             print('ins part upgrade start')
             self.ins_part_upgrade(self.fw_part_list[ins_part_postion])
         time.sleep(0.5)
-        self.driver.jump2app(2)   
+        self.driver.jump2app(2)
+        self.set_buad = self.driver.get_rtk_ins_version()   
 
     def sdk_work(self):
         # upgrade sdk9100 part of the device
@@ -270,7 +271,7 @@ class Executor:
             self.driver.kill_app(1, 2)
         self.driver.flash_write_pre(content)
         time.sleep(0.1)
-        if self.ver_switch == False:
+        if self.set_buad == True:
             if self.driver.change_buad() == False:
                 print('Prepare baudrate change command failed\n')
                 self.driver.kill_app(1, 2)
@@ -313,13 +314,6 @@ class Executor:
             else:
                 break
 
-fw_ver = input('choose Y/N\ncommit FW version, if it before 28.02.03 input Y, else input N\n')
-if fw_ver == 'Y' or fw_ver == 'y':
-    ver_switch = False
-elif fw_ver == 'N' or fw_ver == 'n':
-    ver_switch = True
-else:
-    ver_switch = True
-
-a = Executor(ver_switch)
-a.upgrade_work()
+if __name__ == '__main__':
+    upgrade = Upgrade_Center()
+    upgrade.upgrade_work()

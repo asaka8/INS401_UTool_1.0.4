@@ -71,13 +71,13 @@ class Ethernet_Dev:
                     bootloader = split_text[9]
                     imu_app_ver = split_text[12]
                     sta9100_ver = split_text[15]
-                    output_msg = f'\033[0;32mINS401 SN:{serial_number}  Hardware Version:{hardware_ver}  RTK_INS App:{rtk_ins_app_ver}  Bottloader:{bootloader}\nIMU APP Version:{imu_app_ver}  STA9100 Version:{sta9100_ver}\033[0;37m'
-                    print(output_msg)
-                    
-                    return True
+                    device_info = f'\033[0;32mINS401 SN:{serial_number}  Hardware Version:{hardware_ver}  RTK_INS App:{rtk_ins_app_ver}  Bottloader:{bootloader}\nIMU APP Version:{imu_app_ver}  STA9100 Version:{sta9100_ver}\033[0;37m'
+                    # print(output_msg)
+                    return True, device_info
                 else:
-                    return True
-        return False
+                    error_info = f'\033[0;31mINS401 INFO ERROR\033[0;37m'
+                    return True, error_info, None
+        return False, error_info, None
 
     def format_string(self, data_buffer):
         parsed = bytearray(data_buffer) if data_buffer and len(
