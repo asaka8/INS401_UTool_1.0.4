@@ -163,13 +163,13 @@ class Upgrade_Center:
             print('ins part upgrade start')
             self.ins_part_upgrade(self.fw_part_list[ins_part_postion])
         time.sleep(0.5)
-        self.driver.jump2app(2)
-        self.set_buad = self.driver.get_rtk_ins_version()   
+        self.driver.jump2app(2)  
 
     def sdk_work(self):
         # upgrade sdk9100 part of the device
         if 'sdk' in self.part_name_list:
             self.driver.shake_hand() 
+            self.set_buad = self.driver.get_rtk_ins_version()
             self.driver.sdk_jump2boot(3)
             self.driver.shake_hand()
             sdk_part_postion = self.part_name_list.index('sdk')
