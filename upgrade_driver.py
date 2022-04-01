@@ -10,6 +10,7 @@ import threading
 from tqdm import trange
 from ethernet_provider import Ethernet_Dev
 from sdk_boot import XLDR_TESEO5_BOOTLOADER_CUT2, BLOCK_SIZE, CRC32_TAB
+from print_center import error_print, pass_print
 
 CMD_start = [0x55, 0x55]
 
@@ -57,20 +58,18 @@ class UpgradeDriver:
         message_bytes = []
         self.ether.send_msg(command, message_bytes)
         time.sleep(0.5)
-        try:
-            result = self.ether.write_read_response(command, message=[])
-            data = result[2]
-            # return data
-        except Exception as e:
-            print(e)
-            raise
+
+        result = self.ether.write_read_response(command, message=[])
+        data = result[2]
+
+        return data
 
     def get_rtk_ins_version(self):
         result = self.ether.ping_device()
         if result[2] != None:
             version_num = int(result[2].replace('.', ''))
         else:
-            print(f'\033[0;31mRTK/INS APP INFO ERROR\033[0;37m')
+            error_print(f'RTK/INS APP INFO ERROR')
             self.kill_app(1, 2)
         
         if version_num < 280203:
@@ -89,7 +88,7 @@ class UpgradeDriver:
         if result == True:
             return
         else:
-            print('reshake failed')
+            error_print('reshake failed')
             self.kill_app(1, 2)
             
 
@@ -106,7 +105,7 @@ class UpgradeDriver:
         if result[0] != []:
             pass
         else:
-            print('send JI command failed')
+            error_print('send JI command failed')
         time.sleep(waiting_time)
 
     def jump2app(self, waiting_time):
@@ -122,7 +121,7 @@ class UpgradeDriver:
         if result[0] != []:
             pass
         else:
-            print('send JI command failed')
+            error_print('send JI command failed')
         time.sleep(waiting_time)
 
     def before_write_content(self, core, content_len):
@@ -147,7 +146,7 @@ class UpgradeDriver:
         #         self.kill_app(1, 2)
             
         if result is None:
-            print('send cs command failed, core:{0}'.format(ord(core)))
+            error_print(f'send cs command failed, core:{ord(core)}')
             self.kill_app(1, 2)
 
     def write_block(self, num_bytes, current, upgrade_flag, data):
@@ -177,7 +176,7 @@ class UpgradeDriver:
                 return
         
         if result == False:
-            print('send IMU_JI command failed')
+            error_print('send IMU_JI command failed')
             self.kill_app(1, 2)
 
     def imu_jump2app(self, waiting_time):
@@ -193,7 +192,7 @@ class UpgradeDriver:
                 time.sleep(waiting_time)
                 return
         
-        print('send IMU_JA command failed')
+        error_print('send IMU_JA command failed')
         self.kill_app(1, 2)
 
     def imu_write_block(self, data_len, current, upgrade_flag, data):
@@ -215,7 +214,7 @@ class UpgradeDriver:
         if result == True:
             return
     
-        print('send WA command failed')
+        error_print('send WA command failed')
         self.kill_app(1, 2)
 
     # 9100sdk upgrade protocol
@@ -232,7 +231,7 @@ class UpgradeDriver:
                 return
     
         if result == False:        
-            print('JS command send failed')
+            error_print('JS command send failed')
             self.kill_app(1, 2)
 
     def sdk_jump2app(self, waiting_time):
@@ -248,7 +247,7 @@ class UpgradeDriver:
                 return
         
         if result == False:
-            print('JG command send failed')
+            error_print('JG command send failed')
             self.kill_app(1, 2)
 
     def sdk_sync(self):

@@ -8,9 +8,8 @@ from cv2 import split
 from numpy import True_
 
 from scapy.all import sendp, sniff, conf, AsyncSniffer
-from scapy.layers.l2 import Ether
 from sdk_boot import XLDR_TESEO5_BOOTLOADER_CUT2, BLOCK_SIZE, CRC32_TAB
-
+from print_center import error_print, pass_print
 
 PING_TYPE = [0x01, 0xcc]
 COMMAND_START = [0x55, 0x55]
@@ -40,7 +39,7 @@ class Ethernet_Dev:
             else:
                 if i == len(iface_list) - 1:
                     result = False
-                    print('No available Ethernet card was found.')
+                    error_print('No available Ethernet card was found.')
                     break
         return result
 
@@ -93,7 +92,7 @@ class Ethernet_Dev:
                     formatted = str(struct.pack(
                         '{0}B'.format(len(parsed)), *parsed), 'utf-8')
             except UnicodeDecodeError:
-                print('Parse data as string failed')
+                error_print('Parse data as string failed')
                 formatted = ''
 
         return formatted
@@ -160,7 +159,7 @@ class Ethernet_Dev:
                 if packet_crc == self.calc_crc(packet_raw[2:8+packet_length]): 
                     data_buffer = packet_raw[8:8+packet_length]
                 else:
-                    print('crc error')
+                    error_print('crc error')
                     pass
 
         return packet_type, packet_length_list, data_buffer
@@ -257,7 +256,7 @@ class Ethernet_Dev:
         if self.iface_confirmed:
             self.iface = iface[0]
             self.src_mac = iface[1]
-            print(f'\033[0;32m[NetworkCard]{self.iface}\033[0;37m')
+            error_print(f'[NetworkCard]{self.iface}')
 
     def get_network_card(self):
         network_card_list = []

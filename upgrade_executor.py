@@ -7,6 +7,7 @@ import threading
 from tqdm import trange
 from ethernet_provider import Ethernet_Dev
 from upgrade_driver import UpgradeDriver
+from print_center import pass_print, error_print
 
 PART_NAME = ['rtk', 'ins', 'sdk', 'imu_boot', 'imu']
 
@@ -21,7 +22,7 @@ class Upgrade_Center:
         self.fw_part_lens_list = []
         self.fw_part_list = []
         
-    def upgrade_work(self, fw_path = './bin/INS401_28.03a.bin'):
+    def upgrade_work_generator(self, fw_path = './bin/INS401_28.03a.bin'):
         self.driver.sniff_dev()
         self.driver.get_dev_info()
         '''TODO
@@ -133,13 +134,15 @@ class Upgrade_Center:
                 pass_time += 1
             else:
                 failed_part = PART_NAME[i]
-                print(f'Firmware validity check failed, failed on {failed_part}') 
+                error_print(f'Firmware validity check failed, failed on {failed_part}') 
 
         if pass_time != len(self.fw_part_list):
-            print('Upgrade Failed')
+            error_print('Upgrade init Failed, please check the FW file')
             time.sleep(2)
             self.driver.kill_app(1, 2)
+        
 
+    def upgrade_start(self):
         self.rtk_ins_work()
         self.sdk_work()
         self.imu_work()
@@ -172,7 +175,7 @@ class Upgrade_Center:
             print('sdk part upgrade start')
             self.sdk_part_upgrade(self.fw_part_list[sdk_part_postion])
             self.driver.sdk_jump2app(3)
-            print('sdk upgrade successed\n')
+            pass_print('sdk upgrade successed\n')
 
     def imu_work(self):    
         # upgrade imu part of the device
@@ -184,13 +187,13 @@ class Upgrade_Center:
             imu_boot_part_position = self.part_name_list.index('imu_boot')
             print('imu boot part upgrade start')
             self.imu_part_upgrade(self.fw_part_list[imu_boot_part_position])
-            print('imu boot part upgrade successed\n')
+            pass_print('imu boot part upgrade successed\n')
         if 'imu' in self.part_name_list:
             imu_part_position = self.part_name_list.index('imu')
             print('imu part upgrade start')
             self.imu_part_upgrade(self.fw_part_list[imu_part_position])
         self.driver.imu_jump2app(3)
-        print('imu upgrade successed')
+        pass_print('imu upgrade successed')
 
     def rtk_part_upgrade(self, content):
         core = '0'
@@ -215,7 +218,7 @@ class Upgrade_Center:
         upgrade_flag += 1
 
         self.driver.write_block(extract_content_flag, current_side, upgrade_flag, extract_content)
-        print('rtk upgrade successed\n')
+        pass_print('rtk upgrade successed\n')
 
     def ins_part_upgrade(self, content):
         core = '1'
@@ -242,7 +245,7 @@ class Upgrade_Center:
         upgrade_flag += 1
 
         self.driver.write_block(extract_content_flag, copy_side, upgrade_flag, extract_content)
-        print('ins upgrade successed\n')
+        pass_print('ins upgrade successed\n')
 
     def imu_part_upgrade(self, content):
         content_len = len(content)
@@ -267,50 +270,50 @@ class Upgrade_Center:
         content_len = len(content)
         bin_info_list = self.driver.get_bin_info_list(content_len, content)
         if self.driver.sdk_sync() == False:
-            print('sdk sync failed')
+            error_print('sdk sync failed')
             self.driver.kill_app(1, 2)
         self.driver.flash_write_pre(content)
         time.sleep(0.1)
         if self.set_buad == True:
             if self.driver.change_buad() == False:
-                print('Prepare baudrate change command failed\n')
+                error_print('Prepare baudrate change command failed\n')
                 self.driver.kill_app(1, 2)
             if self.driver.send_baud(230400) == False:
-                print('Send baudrate command failed\n')
+                error_print('Send baudrate command failed\n')
                 self.driver.kill_app(1, 2)
             if self.driver.baud_check() == False:
-                print('Baudrate check failed\n')
+                error_print('Baudrate check failed\n')
                 self.driver.kill_app(1, 2)
         if self.driver.is_host_ready() == False:
-            print('Host is not ready.\n')
+            error_print('Host is not ready.\n')
             self.driver.kill_app(1, 2)
         if self.driver.send_boot() == False:
-            print('SDK boot failed\n')
+            error_print('SDK boot failed\n')
             self.driver.kill_app(1, 2)
         if self.driver.send_write_flash() == False:
-            print('Prepare flash change command failed\n')
+            error_print('Prepare flash change command failed\n')
             self.driver.kill_app(1, 2)
         if self.driver.send_bin_info(bin_info_list) == False:
-            print('Send binary info failed')
+            error_print('Send binary info failed')
             self.driver.kill_app(1, 2)
         for i in range(2):
             result = self.driver.wait()
             if i == 0 and result == False:
-                print('Wait devinit failed')
+                error_print('Wait devinit failed')
             elif i == 1 and result == False:
-                print('Wait erase failed')
+                error_print('Wait erase failed')
 
         time.sleep(5)
 
         if self.driver.flash_write(content_len, content) == False:
-            print('Write app bin failed')
+            error_print('Write app bin failed')
             self.driver.kill_app(1, 2)
 
         for i in range(3):
             time.sleep(1)
             result = self.driver.flash_crc()
             if not result and i == 2:
-                print('CRC check fail')
+                error_print('CRC check fail')
             else:
                 break
 
