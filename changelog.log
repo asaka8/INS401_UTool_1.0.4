@@ -1,4 +1,4 @@
-1.0:    INS401 upgrade function
+1.0:   INS401 upgrade function
 	1. rtk/ins write cmd hasn't check self.
 	2. sdk enter bootloader will fail at sometime.(each command is checked for its return).
 	3. the IMU upgrade failed to return the command
