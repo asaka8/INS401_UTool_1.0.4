@@ -59,22 +59,18 @@ class Ethernet_Dev:
                 data_buffer = packet_raw[8: 8 + packet_length]
                 info_text = self.format_string(data_buffer)
                 split_text = info_text.split(' ')
-                if info_text.find('INS401') > -1 and len(split_text) > 6:
+                if info_text.find('INS401') > -1 and len(split_text) > 6 and len(split_text) < 18:
                     '''TODO
                     If lens <=6 output the error info of device
                     '''
-                    # print(info_text)
-                    serial_number = int(split_text[2])
-                    hardware_ver = split_text[4]
                     rtk_ins_app_ver = split_text[7]
-                    bootloader = split_text[9]
-                    imu_app_ver = split_text[12]
-                    sta9100_ver = split_text[15]
-                    device_info = f'\033[0;32mINS401 SN:{serial_number}  Hardware Version:{hardware_ver}  RTK_INS App:{rtk_ins_app_ver}  Bottloader:{bootloader}\nIMU APP Version:{imu_app_ver}  STA9100 Version:{sta9100_ver}\033[0;37m'
                     # print(output_msg)
-                    return True, device_info
+                    return True, info_text, rtk_ins_app_ver
+                elif info_text.find('INS401') > -1 and len(split_text) == 18:
+                    rtk_ins_app_ver = split_text[9]
+                    return True, info_text, rtk_ins_app_ver
                 else:
-                    error_info = f'\033[0;31mINS401 INFO ERROR\033[0;37m'
+                    error_info = f'INS401 INFO ERROR'
                     return True, error_info, None
         return False, error_info, None
 
@@ -256,7 +252,7 @@ class Ethernet_Dev:
         if self.iface_confirmed:
             self.iface = iface[0]
             self.src_mac = iface[1]
-            error_print(f'[NetworkCard]{self.iface}')
+            pass_print(f'[NetworkCard]{self.iface}')
 
     def get_network_card(self):
         network_card_list = []
