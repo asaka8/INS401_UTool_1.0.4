@@ -44,3 +44,14 @@
 	2. The color of print message error
 		New demo
 	1. Add a data visualization demo(developing) 
+
+
+1.0.7: Changed the whole structure of program
+	1. Create a workspace to store the communication and functions of different interfaces by category
+		* Ethernet Only Currently
+	2. Create function root for ethernet:
+		1. upgrade center(completed)
+		2. data center(developing)
+		3. command center(demo)
+	2. Use main.py to run and test the program
+
