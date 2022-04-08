@@ -15,14 +15,14 @@ class Upgrade_Center:
     def __init__(self):
         self.driver = UpgradeDriver()
         self.ether = Ethernet_Dev()
-        self.set_buad = False
+        self.set_buad = True
         self.is_stop = False
         self.part_name_list = []
         self.flag_list = []
         self.fw_part_lens_list = []
         self.fw_part_list = []
         
-    def upgrade_work_generator(self, fw_path = './bin/INS401_28.03a.bin'):
+    def upgrade_work_generator(self, fw_path = './bin/INS401_v28.03.11.bin'):
         self.driver.sniff_dev()
         self.driver.get_dev_info()
         '''TODO
