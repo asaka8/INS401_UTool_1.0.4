@@ -54,33 +54,37 @@ class UpgradeDriver:
         command = CMD_list['JI']
         message_bytes = []
 
-        try:
-            result = self.ether.write_read_response(command, message_bytes)
-        except Exception as e:
-            print(e)
-            raise
+        self.ether.start_listen_data(0x01aa) 
+         
+        for i in range(3):
+            self.ether.send_msg(command, message_bytes)
+            result = self.ether.read_until(None, [0x01, 0xaa], 2000)
 
-        if result[0] != []:
-            pass
-        else:
+            if result == True:
+                time.sleep(waiting_time)
+                return
+        
+        if result == False:
             error_print('send JI command failed')
-        time.sleep(waiting_time)
+            self.kill_app(1, 2)
 
     def jump2app(self, waiting_time):
         command = CMD_list['JA']
         message_bytes = []
 
-        try:
-            result = self.ether.write_read_response(command, message_bytes)
-        except Exception as e:
-            print(e)
-            raise
+        self.ether.start_listen_data(0x02aa) 
+         
+        for i in range(3):
+            self.ether.send_msg(command, message_bytes)
+            result = self.ether.read_until(None, [0x02, 0xaa], 2000)
 
-        if result[0] != []:
-            pass
-        else:
-            error_print('send JI command failed')
-        time.sleep(waiting_time)
+            if result == True:
+                time.sleep(waiting_time)
+                return
+        
+        if result == False:
+            error_print('send JA command failed')
+            self.kill_app(1, 2)
 
     def before_write_content(self, core, content_len):
         command = CMD_list['CS']
@@ -226,6 +230,19 @@ class UpgradeDriver:
             return result
         return result
 
+    def sdk_sync_(self):
+        command = b'\x07\xaa'
+        sync_data = [0xfd, 0xc6, 0x49, 0x28]
+        check_data = [0x3A, 0x54, 0x2C, 0xA6]
+
+        for _ in range(20):
+            self.ether.start_listen_data(0x07aa)
+            self.ether.send_msg(command, sync_data)
+            result = self.ether.read_until([0xCC], check_data, 2000)
+            if result == True:
+                return result
+        return result
+
     def change_buad(self):
         command = b'\x07\xaa'
         change_baud_cmd = [0x71]
@@ -244,7 +261,7 @@ class UpgradeDriver:
         baud_list = self.ether.get_list_from_int(baud_int)
 
         for i in range(3):
-            self.ether.start_listen_data()
+            self.ether.start_listen_data(0x07aa)
             self.ether.send_msg(command, baud_list)
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
             if result == True:
@@ -256,7 +273,7 @@ class UpgradeDriver:
         check_baud = [0x38]
         time.sleep(0.01)
         for i in range(3):
-            self.ether.start_listen_data()
+            self.ether.start_listen_data(0x07aa)
             self.ether.send_msg(command, check_baud)
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
             if result == True:
@@ -429,7 +446,7 @@ class UpgradeDriver:
         time.sleep(1)
         result = self.ether.ping_device()
         if result[0] == True:
-            print(result[1])
+            pass_print(result[1])
             return
         else:
             self.kill_app(1, 2)
@@ -454,7 +471,8 @@ class UpgradeDriver:
     def get_rtk_ins_version(self):
         result = self.ether.ping_device()
         if result[2] != None:
-            version_num = int(result[2].replace('.', ''))
+            version_num_str = result[2].lstrip('v')
+            version_num = int( version_num_str.replace('.', ''))
         else:
             error_print(f'RTK/INS APP INFO ERROR')
             self.kill_app(1, 2)
