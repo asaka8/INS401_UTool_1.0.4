@@ -1,4 +1,4 @@
-1.0:    INS401 upgrade function
+1.0:   INS401 upgrade function
 	1. rtk/ins write cmd hasn't check self.
 	2. sdk enter bootloader will fail at sometime.(each command is checked for its return).
 	3. the IMU upgrade failed to return the command
@@ -19,7 +19,7 @@
 1.0.3: New function:
 	1. IMU_boot upgrade supported
 	2. Automatically identify all identifier bits in the firmware and upgrade each part in sequence
-           BUG fixed:
+    	BUG fixed:
 	1. SDK still in bootloader after upgrade
 	2. Upgrade command self-check failed, but program still continue run
 
@@ -31,7 +31,16 @@
 		1. Optimized redundant threads in the program
 
 
-1.0.5: optimized the program
-	1. Added the function to automatically determine whether the SDK baud rate changes during the upgrade  
+1.0.5: Optimized the program
+	1. Added the function to automatically determine whether the SDK baud rate changes during the upgrade(for 1.0.2)  
 	2. The output mode of the information is optimized, and different colors are used to distinguish the information of different nature
 	3. The structure of some programs was adjusted
+
+
+1.0.6: New function:
+	1. Catch the version of RTK/INS APP on all firmware(before 28.03.11 the lens of device info is 8, after is 11)
+		Fixed bugs:
+	1. Command response check error
+	2. The color of print message error
+		New demo
+	1. Add a data visualization demo(developing) 
