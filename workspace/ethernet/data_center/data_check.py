@@ -3,7 +3,7 @@ import sys
 import time
 import struct
 
-from ethernet_provider import Ethernet_Dev
+from ...communicator.ethernet_provider import Ethernet_Dev
 
 output_packet_list = {
     'imu_data': [0x010a, 30],

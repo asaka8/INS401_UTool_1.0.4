@@ -5,9 +5,9 @@ import struct
 import threading
 
 from tqdm import trange
-from ethernet_provider import Ethernet_Dev
-from upgrade_driver import UpgradeDriver
-from print_center import pass_print, error_print
+from ...communicator.ethernet_provider import Ethernet_Dev
+from .upgrade_driver import UpgradeDriver
+from ...communicator.print_center import pass_print, error_print
 
 PART_NAME = ['rtk', 'ins', 'sdk', 'imu_boot', 'imu']
 
@@ -22,7 +22,7 @@ class Upgrade_Center:
         self.fw_part_lens_list = []
         self.fw_part_list = []
         
-    def upgrade_work_generator(self, fw_path = './bin/INS401_v28.03.11.bin'):
+    def upgrade_work_generator(self, fw_path):
         self.driver.sniff_dev()
         self.driver.get_dev_info()
         '''TODO
@@ -142,8 +142,8 @@ class Upgrade_Center:
             self.driver.kill_app(1, 2)
         
 
-    def upgrade_start(self):
-        self.upgrade_work_generator()
+    def upgrade_start(self, fw_path = './bin/INS401_v28.03.11.bin'):
+        self.upgrade_work_generator(fw_path)
         self.rtk_ins_work()
         self.sdk_work()
         self.imu_work()
@@ -318,6 +318,3 @@ class Upgrade_Center:
             else:
                 break
 
-if __name__ == '__main__':
-    upgrade = Upgrade_Center()
-    upgrade.upgrade_start()
