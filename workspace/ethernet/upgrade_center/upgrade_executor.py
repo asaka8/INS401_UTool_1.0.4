@@ -142,7 +142,7 @@ class Upgrade_Center:
             self.driver.kill_app(1, 2)
         
 
-    def upgrade_start(self, fw_path = './bin/INS401_v28.03.11.bin'):
+    def upgrade_start(self, fw_path):
         self.upgrade_work_generator(fw_path)
         self.rtk_ins_work()
         self.sdk_work()
