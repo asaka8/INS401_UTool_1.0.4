@@ -34,6 +34,17 @@ class DataCaptor:
                 data_lens = len(data)
                 # print(f'{data}\n{data_lens}')
                 return data, data_lens
+
+    def get_imu(self):
+        command_type = output_packet_list['imu_data'][0]
+        payload_lens = output_packet_list['imu_data'][1]
+        self.ether.start_listen_data(command_type)
+        while True:
+            data = self.ether.read()
+            if data is not None:
+                payload = data[22:22+payload_lens]
+                latest = self.raw_imu_parse(payload)
+                return latest[2]
     
     def get_imu_data(self):
         '''output IMU data
