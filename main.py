@@ -1,30 +1,31 @@
 from numpy import true_divide
 import pyqtgraph as pg
+import pyqtgraph.examples as examples
 import psutil
 
 from operator import imul
 from sre_constants import CH_LOCALE
 from workspace.ethernet.upgrade_center.upgrade_executor import Upgrade_Center
 from workspace.ethernet.data_center.data_captor import DataCaptor
-from workspace.ethernet.data_center.data_visual import  run_example, my_ex
+
 
 data_rev = DataCaptor()
 upgrade = Upgrade_Center()
 
-# if __name__ == '__main__':
-    # fw_path = './bin/INS401_28.02.01.bin'
-    # upgrade = Upgrade_Center()
-    # upgrade.upgrade_start(fw_path)
-   
-    # data_rev.read_data()
-    # run_example()
+def show_data():
+    data_rev.connect()
+    data = data_rev.read_data()[0]
 
+def upgrade_work():
+    fw_path = './bin/INS401_28.02.01.bin'
+    upgrade = Upgrade_Center()
+    upgrade.upgrade_start(fw_path)
 
 def get_cpu_info():
     cpu = "%0.2f" % psutil.cpu_percent(interval=1)
     data_list.append(float(cpu))
     # print(float(cpu))
-    plot.setData(data_list, pen='g')
+    curve.setData(data_list, pen='g')
 
 def get_imu_accels():
     accel_x = data_rev.get_imu()[0]
@@ -36,9 +37,10 @@ def get_imu_accels():
     # historyLength += 1
     curve.setData(data_list, pen='r')
 
-if __name__ == '__main__':
+def curve_runer():
+    global curve, data_list
+
     data_list = []
-    # captor = DataCaptor()
     data_rev.connect()
 
     app = pg.mkQApp()
@@ -60,3 +62,7 @@ if __name__ == '__main__':
     timer.start()
 
     app.exec_()
+
+
+if __name__ == '__main__':
+    curve_runer()
