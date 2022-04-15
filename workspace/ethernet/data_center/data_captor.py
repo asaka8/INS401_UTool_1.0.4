@@ -17,14 +17,13 @@ class DataCaptor:
         self.ether = Ethernet_Dev()
 
     def connect(self):
-        self.ether.find_device()
-        return
+        result = self.ether.find_device()
+        return result
 
     def read_data(self):
         '''
         get raw data from device
         '''
-        self.connect()
         while True:
             self.ether.start_listen_data() # can add filter type in this function
             data = self.ether.read()
@@ -44,7 +43,7 @@ class DataCaptor:
             if data is not None:
                 payload = data[22:22+payload_lens]
                 latest = self.raw_imu_parse(payload)
-                return latest[2]
+                return latest
     
     def get_imu_data(self):
         '''output IMU data
