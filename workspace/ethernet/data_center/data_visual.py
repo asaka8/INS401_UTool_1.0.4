@@ -68,8 +68,8 @@ class IMUDataVisual:
         gyro_x_lst = []
         gyro_y_lst = []
         gyro_z_lst = []
-        self.data_recv.connect()
 
+        self.data_recv.connect()
         app = pg.mkQApp()
         win = pg.GraphicsWindow()
         win.setWindowTitle(u'pyqtgraph updating wave')
@@ -86,9 +86,10 @@ class IMUDataVisual:
         p1.setTitle('IMU X-axis Acceleration')
         curve_accel_x = p1.plot()
 
-        timer1 = pg.QtCore.QTimer()
-        timer1.timeout.connect(self.get_imu_accel_x)
-        timer1.start()
+        timer = pg.QtCore.QTimer()
+
+        timer.timeout.connect(self.get_imu_accel_x)
+        timer.start()
 
         # plotting for Y-axis acceleration
         historyLength = 500
@@ -100,9 +101,8 @@ class IMUDataVisual:
         p2.setTitle('IMU Y-axis Acceleration')
         curve_accel_y = p2.plot()
 
-        timer2 = pg.QtCore.QTimer()
-        timer2.timeout.connect(self.get_imu_accel_y)
-        timer2.start()
+        timer.timeout.connect(self.get_imu_accel_y)
+        timer.start()
 
         # plotting for Z-axis acceleration
         historyLength = 500
@@ -114,9 +114,8 @@ class IMUDataVisual:
         p3.setTitle('IMU Z-axis Acceleration')
         curve_accel_z = p3.plot()
 
-        timer3 = pg.QtCore.QTimer()
-        timer3.timeout.connect(self.get_imu_accel_z)
-        timer3.start()
+        timer.timeout.connect(self.get_imu_accel_z)
+        timer.start()
 
         win.nextRow()
 
