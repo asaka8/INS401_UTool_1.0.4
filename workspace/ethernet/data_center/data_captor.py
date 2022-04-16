@@ -34,7 +34,9 @@ class DataCaptor:
                 # print(f'{data}\n{data_lens}')
                 return data, data_lens
 
-    def get_imu(self):
+    def get_imu_data(self):
+        '''output IMU data
+        '''
         command_type = output_packet_list['imu_data'][0]
         payload_lens = output_packet_list['imu_data'][1]
         self.ether.start_listen_data(command_type)
@@ -44,58 +46,45 @@ class DataCaptor:
                 payload = data[22:22+payload_lens]
                 latest = self.raw_imu_parse(payload)
                 return latest
-    
-    def get_imu_data(self):
-        '''output IMU data
-        '''
-        command_type = output_packet_list['imu_data'][0]
-        payload_lens = output_packet_list['imu_data'][1]
-        while True:
-            self.ether.start_listen_data(command_type)
-            data = self.ether.read()
-            if data is not None:
-                payload = data[22:22+payload_lens]
-                latest = self.raw_imu_parse(payload)
-                print(latest)
 
     def get_gnss_data(self):
         '''output GNSS data
         '''
         command_type = output_packet_list['gnss_data'][0]
         payload_lens = output_packet_list['gnss_data'][1]
+        self.ether.start_listen_data(command_type)
         while True:
-            self.ether.start_listen_data(command_type)
             data = self.ether.read()
             if data is not None:
                 payload = data[22:22+payload_lens]
                 latest = self.gnss_parse(payload)
-                print(latest)
+                return latest
 
     def get_ins_data(self):
         '''output INS data
         '''
         command_type = output_packet_list['ins_data'][0]
         payload_lens = output_packet_list['ins_data'][1]
+        self.ether.start_listen_data(command_type)
         while True:
-            self.ether.start_listen_data(command_type)
             data = self.ether.read()
             if data is not None:
                 payload = data[22:22+payload_lens]
                 latest = self.ins_parse(payload)
-                print(latest)
+                return latest
     
     def get_dm_data(self):
         '''output DM data
         '''
         command_type = output_packet_list['dm_data'][0]
         payload_lens = output_packet_list['dm_data'][1]
+        self.ether.start_listen_data(command_type)
         while True:
-            self.ether.start_listen_data(command_type)
             data = self.ether.read()
             if data is not None:
                 payload = data[22:22+payload_lens]
                 latest = self.ins_parse(payload)
-                print(latest)
+                return latest
 
     def raw_imu_parse(self, payload):
         fmt = '<HIffffff'
@@ -182,11 +171,18 @@ class DataCaptor:
         self.connect()
         data_type = input('input packet type:\n')
         if data_type == 'imu':
-            self.get_imu_data()
+            while True:
+                data = self.get_imu_data()
+                print(data)
         elif data_type == 'ins':
-            self.get_ins_data()
+            while True:
+                data = self.get_ins_data()
+                print(data)
         elif data_type == 'gnss':
-            self.get_gnss_data()
+            while True:
+                data = self.get_gnss_data()
+                print(data)
         elif data_type == 'dm':
-            self.get_dm_data()
-    
+            while True:
+                data = self.get_dm_data()
+                print(data)
