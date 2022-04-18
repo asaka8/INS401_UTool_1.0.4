@@ -1,9 +1,11 @@
+import datetime
 import os
 import sys
 import time
 import struct
 
 from ...communicator.ethernet_provider import Ethernet_Dev
+from .data_logger import DataLogger
 
 output_packet_list = {
     'imu_data': [0x010a, 30],
@@ -91,9 +93,13 @@ class DataCaptor:
         data = struct.unpack(fmt, payload)
         gps_week = data[0]
         gps_millisecs = data[1]
-        accels = data[2:5]
-        gyros = data[5:8]
-        return gps_week, gps_millisecs, accels, gyros
+        x_accel = data[2]
+        y_accel = data[3]
+        z_accel = data[4]
+        x_gyro = data[5]
+        y_gyro = data[6]
+        z_gyro = data[7]
+        return gps_week, gps_millisecs, x_accel, y_accel, z_accel, x_gyro, y_gyro, z_gyro
         
     def gnss_parse(self, payload):
         fmt = '<HIBdddfffBBffffffff'
