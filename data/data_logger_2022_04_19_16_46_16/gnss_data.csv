@@ -1,1 +1,0 @@
-gps_week,gps_millisecs,position_type,latitude,longitude,height,latitude_std,longitude_std,height_std,numberOfSVs,numberOfSVs_in_solution,hdop,diffage,north_vel,east_vel,up_vel,north_vel_std,east_vel_std,up_vel_std
