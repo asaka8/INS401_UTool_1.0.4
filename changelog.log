@@ -56,8 +56,15 @@
 	2. Use main.py to run and test the program
 
 1.0.8: Add data visualization function
-	1. show the updating wave plotting in the window (just support accels/gyros of imu currently)
-	2. fixed some bugs in data_captor, change the output mode of each function(on going)
+	1. Show the updating wave plotting in the window (just support accels/gyros of imu currently)
+	2. Fixed some bugs in data_captor, change the output mode of each function(on going)
 	TODO:
-	1. add more infomation in data visualization(GNSS data next step)
-	2. add visualization function of the static data
+	1. Add more infomation in data visualization(GNSS data next step)
+	2. Add visualization function of the static data
+
+1.0.9:New function
+	1. Add a fuction that auto check whether data saving root exist, if not create the root
+	2. Add a class to generate the csv file for the data saving
+	3. Add a class for auto log parse data to the target csv file
+
+	
