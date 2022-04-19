@@ -5,7 +5,6 @@ import time
 import struct
 
 from ...communicator.ethernet_provider import Ethernet_Dev
-from .data_logger import DataLogger
 
 output_packet_list = {
     'imu_data': [0x010a, 30],
@@ -172,7 +171,7 @@ class DataCaptor:
         gnss_chip_temperature = data[5]
         return gps_week, gps_millisecs, device_status_bit_field, imu_temperature, mcu_temperature,\
             gnss_chip_temperature
-
+  
     def start(self):
         self.connect()
         data_type = input('input packet type:\n')

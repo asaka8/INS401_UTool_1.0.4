@@ -1,0 +1,2 @@
+gps_week,gps_millisecs,ins_status,ins_position_type,latitude,longitude,height,north_vel,east_vel,up_vel,longitudinal_vel,lateral_vel,roll,pitch,heading,latitude_std,height_std,north_vel_std,east_vel_std,up_vel_std,long_vel_std,lat_vel_std,roll_std,pitch_std,heading_std,continent_id
+gps_week,gps_millisecs,device_status_bit_field,imu_temperature,mcu_temperature,gnss_chip_temperature

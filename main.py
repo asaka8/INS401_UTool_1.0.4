@@ -13,11 +13,14 @@ from workspace.ethernet.upgrade_center.upgrade_executor import Upgrade_Center
 from workspace.ethernet.data_center.data_captor import DataCaptor
 from workspace.ethernet.data_center.data_visual import IMUDataVisual
 
+from workspace.ethernet.data_center.data_logger import DataLogger
+
 
 data_rev = DataCaptor()
 upgrade = Upgrade_Center()
 driver = UpgradeDriver()
 visual = IMUDataVisual()
+logger = DataLogger()
 
 def show_data():
     data_rev.connect()
@@ -65,5 +68,6 @@ class PingTest:
             t.join()
 
 if __name__ == '__main__':
-    visual.curve_runer()
+    # visual.gyros_curve_runner()
     # example.run()
+    logger.start_log()
