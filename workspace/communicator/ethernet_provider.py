@@ -369,16 +369,15 @@ class Ethernet_Dev:
     def read(self):
         data = None
         if len(self.receive_cache) > 0:
-            data = self.receive_cache.popleft()
+            data = self.receive_cache.pop()
             self.async_sniffer.stop()
         return data
 
     def continue_read(self):
         data = None
         if len(self.receive_cache) > 0:
-            data = self.receive_cache.popleft()
+            data = self.receive_cache.pop()
         return data
-
 
     def handle_catch_packet(self, packet):
         packet_raw = bytes(packet)[12:]
