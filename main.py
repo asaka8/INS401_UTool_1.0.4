@@ -29,7 +29,7 @@ def show_data():
         print(data)
 
 def upgrade_work():
-    fw_path = './bin/INS401_v28.03.11.bin'
+    fw_path = './bin/INS401_28.03a.bin'
     upgrade = Upgrade_Center()
     upgrade.upgrade_start(fw_path)
 
@@ -68,6 +68,7 @@ class PingTest:
             t.join()
 
 if __name__ == '__main__':
-    # visual.gyros_curve_runner()
-    # example.run()
-    logger.start_log()
+    # visual.accels_curve_runner()
+    # upgrade_work()
+    # logger.start_log()
+    data_rev.log_raw_data()
