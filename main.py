@@ -1,3 +1,4 @@
+import sys
 import time
 import threading
 import numpy as np
@@ -21,6 +22,8 @@ upgrade = Upgrade_Center()
 driver = UpgradeDriver()
 visual = IMUDataVisual()
 logger = DataLogger()
+
+sys.dont_write_bytecode = True
 
 def show_data():
     data_rev.connect()
