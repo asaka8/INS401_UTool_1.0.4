@@ -22,7 +22,7 @@ class Ethernet_Dev:
         self.read_data = b''
         self.iface_confirmed = False
         self.async_sniffer = None
-        # self.receive_cache = collections.deque(maxlen=1024*16)
+        self.receive_cache = collections.deque(maxlen=1024*16)
 
     # Connect device functions
     def find_device(self):
@@ -355,31 +355,29 @@ class Ethernet_Dev:
                                      & 0xff] ^ (crc32val >> 8)
         return crc32val ^ 0xffffffff
 
-
-    ### on going ###
     def start_listen_data(self, filter_type=None):
         if filter_type == None:
-            filter_exp = f'ether src host {self.dst_mac}'
+            filter_exp = f'ether src host {self.dst_mac} '
         else:
             filter_exp = f'ether src host {self.dst_mac}  and ether[16:2] == {filter_type}'
         
         self.async_sniffer = AsyncSniffer(
-            iface=self.iface, prn=self.handle_catch_packet, filter=filter_exp)
+            iface=self.iface, prn=self.handle_catch_packet, filter=filter_exp, store=0)
         self.async_sniffer.start()
         time.sleep(0.1)
 
     def read(self):
-        temp = self.read_data
-        self.read_data = b''
-        # self.async_sniffer.stop()
-        if len(temp) > 0: 
+        if len(self.receive_cache) > 0:
             self.async_sniffer.stop()
-            return temp
-
+            # print(self.receive_cache.popleft())
+            return self.receive_cache.popleft()
         return None
 
     def handle_catch_packet(self, packet):
-        self.read_data = bytes(packet)
+        # packet_raw = bytes(packet)[12:]
+        # self.receive_cache.appendleft(packet_raw[2:])
+        packet_raw = bytes(packet)
+        self.receive_cache.append(packet_raw)
 
     def read_until(self, check_data, command_type, read_times):
         '''

@@ -34,7 +34,7 @@ def logf_generator(func):
             ins_logger.write_log(data_dict)
         # dm data log function
         elif packet_type_id == 'dm':
-            data_dict = dict(zip(dm_field_names, packet_type_id)) 
+            data_dict = dict(zip(dm_field_names, packet_data)) 
             dm_logger.write_log(data_dict)
         return data_dict
     return wraps
@@ -109,22 +109,11 @@ class DataLogger:
             imu_logger.create(imu_field_names)
             gnss_logger.create(gnss_field_names)
             ins_logger.create(ins_field_names)
-            ins_logger.create(dm_field_names)
+            dm_logger.create(dm_field_names)
             data_recv.connect()
-            threads = []
-            imu_log_thread = threading.Thread(target=self.imu_log_thread)
-            threads.append(imu_log_thread)
-            gnss_log_thread = threading.Thread(target=self.gnss_log_thread)
-            threads.append(gnss_log_thread)
-            ins_log_thread = threading.Thread(target=self.ins_log_thread)
-            threads.append(ins_log_thread)
-            dm_log_thread = threading.Thread(target=self.dm_log_thread)
-            threads.append(dm_log_thread)
-
-            for t in threads:
-                t.start()
-            for t in threads:
-                t.join()
+            whole_log_thread = threading.Thread(target=self.whole_log_thread)
+            whole_log_thread.start()
+            whole_log_thread.join()
 
     def imu_log_thread(self):
         while True:
@@ -141,6 +130,10 @@ class DataLogger:
     def dm_log_thread(self):
         while True:
             self.dm_data_log()
+
+    def whole_log_thread(self):
+        while True:
+            self.whole_data_log()
 
     @logf_generator
     def imu_data_log():
@@ -161,3 +154,8 @@ class DataLogger:
     def dm_data_log():
         data = data_recv.get_dm_data()
         return ['dm', data]
+
+    @logf_generator
+    def whole_data_log():
+        data = data_recv.get_whole_data()
+        return data

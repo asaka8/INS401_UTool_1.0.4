@@ -21,19 +21,18 @@ class DataCaptor:
         result = self.ether.find_device()
         return result
 
-    def read_data(self):
+    def log_raw_data(self):
         '''
         get raw data from device
         '''
+        time_str = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
+        logf = open(f'./data/user_{time_str}.bin', 'ab')
         while True:
             self.ether.start_listen_data() # can add filter type in this function
             data = self.ether.read()
  
             if data is not None:
-                data = data.hex()
-                data_lens = len(data)
-                # print(f'{data}\n{data_lens}')
-                return data, data_lens
+                logf.write(data)
 
     def get_imu_data(self):
         '''output IMU data
@@ -57,6 +56,7 @@ class DataCaptor:
         while True:
             data = self.ether.read()
             if data is not None:
+                # print(data.hex())
                 payload = data[22:22+payload_lens]
                 latest = self.gnss_parse(payload)
                 return latest
@@ -86,6 +86,41 @@ class DataCaptor:
                 payload = data[22:22+payload_lens]
                 latest = self.ins_parse(payload)
                 return latest
+
+    def get_whole_data(self):
+        '''out put all data 
+        '''
+        while True:
+            self.ether.start_listen_data()
+            data = self.ether.read()
+            if data is not None:
+                # print(data.hex())
+                latest = self.detect_packet(data)
+            if latest is not None:
+                return latest
+
+    def detect_packet(self, data):
+        packet_type = data[16:18].hex() # NO.16 & NO.17 bytes is the type of packet
+        if packet_type == '010a':
+            payload_lens = output_packet_list['imu_data'][1]
+            payload = data[22:22+payload_lens]
+            latest = ['imu', self.raw_imu_parse(payload)]
+        elif packet_type == '020a':
+            payload_lens = output_packet_list['gnss_data'][1]
+            payload = data[0:payload_lens]
+            latest = ['gnss', self.gnss_parse(payload)]
+        elif packet_type == '030a':
+            payload_lens = output_packet_list['ins_data'][1]
+            payload = data[22:22+payload_lens]
+            latest = ['ins', self.ins_parse(payload)]
+        elif packet_type == '050a':
+            payload_lens = output_packet_list['dm_data'][1]
+            payload = data[22:22+payload_lens]
+            latest = ['dm', self.dm_parse(payload)]
+        else:
+            return
+        # print(latest)
+        return latest
 
     def raw_imu_parse(self, payload):
         fmt = '<HIffffff'
