@@ -365,19 +365,25 @@ class Ethernet_Dev:
             iface=self.iface, prn=self.handle_catch_packet, filter=filter_exp, store=0)
         self.async_sniffer.start()
         time.sleep(0.1)
-
+        
     def read(self):
+        data = None
         if len(self.receive_cache) > 0:
+            data = self.receive_cache.popleft()
             self.async_sniffer.stop()
-            # print(self.receive_cache.popleft())
-            return self.receive_cache.popleft()
-        return None
+        return data
+
+    def continue_read(self):
+        data = None
+        if len(self.receive_cache) > 0:
+            data = self.receive_cache.popleft()
+        return data
+
 
     def handle_catch_packet(self, packet):
-        # packet_raw = bytes(packet)[12:]
-        # self.receive_cache.appendleft(packet_raw[2:])
-        packet_raw = bytes(packet)
-        self.receive_cache.append(packet_raw)
+        packet_raw = bytes(packet)[12:]
+        self.receive_cache.append(packet_raw[2:])
+        # pass_print(packet_raw)
 
     def read_until(self, check_data, command_type, read_times):
         '''
