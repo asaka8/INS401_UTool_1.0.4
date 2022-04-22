@@ -4,6 +4,7 @@ import sys
 import time
 import struct
 
+from workspace.communicator.print_center import error_print
 from ...communicator.ethernet_provider import Ethernet_Dev
 
 output_packet_list = {
@@ -25,13 +26,14 @@ class DataCaptor:
         '''
         get raw data from device
         '''
+        self.connect()
         time_str = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
         logf = open(f'./data/user_{time_str}.bin', 'ab')
+        self.ether.start_listen_data() # can add filter type in this function
         while True:
-            self.ether.start_listen_data() # can add filter type in this function
-            data = self.ether.read()
- 
+            data = self.ether.continue_read()
             if data is not None:
+                print(data)
                 logf.write(data)
 
     def get_imu_data(self):
@@ -43,7 +45,7 @@ class DataCaptor:
         while True:
             data = self.ether.read()
             if data is not None:
-                payload = data[22:22+payload_lens]
+                payload = data[8:8+payload_lens]
                 latest = self.raw_imu_parse(payload)
                 return latest
 
@@ -57,7 +59,7 @@ class DataCaptor:
             data = self.ether.read()
             if data is not None:
                 # print(data.hex())
-                payload = data[22:22+payload_lens]
+                payload = data[8:8+payload_lens]
                 latest = self.gnss_parse(payload)
                 return latest
 
@@ -70,7 +72,7 @@ class DataCaptor:
         while True:
             data = self.ether.read()
             if data is not None:
-                payload = data[22:22+payload_lens]
+                payload = data[8:8+payload_lens]
                 latest = self.ins_parse(payload)
                 return latest
     
@@ -83,7 +85,7 @@ class DataCaptor:
         while True:
             data = self.ether.read()
             if data is not None:
-                payload = data[22:22+payload_lens]
+                payload = data[8:8+payload_lens]
                 latest = self.ins_parse(payload)
                 return latest
 
@@ -100,22 +102,22 @@ class DataCaptor:
                 return latest
 
     def detect_packet(self, data):
-        packet_type = data[16:18].hex() # NO.16 & NO.17 bytes is the type of packet
+        packet_type = data[2:4].hex() # NO.2 & NO.4 bytes is the type of packet
         if packet_type == '010a':
             payload_lens = output_packet_list['imu_data'][1]
-            payload = data[22:22+payload_lens]
+            payload = data[8:8+payload_lens]
             latest = ['imu', self.raw_imu_parse(payload)]
         elif packet_type == '020a':
             payload_lens = output_packet_list['gnss_data'][1]
-            payload = data[0:payload_lens]
+            payload = data[8:8+payload_lens]
             latest = ['gnss', self.gnss_parse(payload)]
         elif packet_type == '030a':
             payload_lens = output_packet_list['ins_data'][1]
-            payload = data[22:22+payload_lens]
+            payload = data[8:8+payload_lens]
             latest = ['ins', self.ins_parse(payload)]
         elif packet_type == '050a':
             payload_lens = output_packet_list['dm_data'][1]
-            payload = data[22:22+payload_lens]
+            payload = data[8:8+payload_lens]
             latest = ['dm', self.dm_parse(payload)]
         else:
             return
