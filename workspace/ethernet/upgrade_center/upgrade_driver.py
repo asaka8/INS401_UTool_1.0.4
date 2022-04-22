@@ -6,6 +6,7 @@ import time
 import signal
 import struct
 import threading
+from urllib import response
 
 from tqdm import trange
 from ...communicator.ethernet_provider import Ethernet_Dev
@@ -218,13 +219,15 @@ class UpgradeDriver:
         # check_data = [0x3A, 0x54, 0x2C, 0xA6]
         retry = 20
         result = False
+        response = [1, 2] # fake elements fill list
 
         for _ in range(retry):
-            result = self.ether.write_read_response(command, sync, True, 2)
-            if result[1] != []:
+            response = self.ether.write_read_response(command, sync, True, 2)
+            if response[1] != []:
                 break
 
-        if result[2] == bytes([0x3A, 0x54, 0x2C, 0xA6]):
+        if response[2] == bytes([0x3A, 0x54, 0x2C, 0xA6]):
+            # print(response[2])
             result = True
         else:
             return result
