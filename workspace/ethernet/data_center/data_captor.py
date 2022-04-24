@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import struct
+import collections
 
 from workspace.communicator.print_center import error_print
 from ...communicator.ethernet_provider import Ethernet_Dev
@@ -17,6 +18,7 @@ output_packet_list = {
 class DataCaptor:
     def __init__(self):
         self.ether = Ethernet_Dev()
+        self.receive_cache = collections.deque([])
 
     def connect(self):
         result = self.ether.find_device()
@@ -83,23 +85,23 @@ class DataCaptor:
         payload_lens = output_packet_list['dm_data'][1]
         self.ether.start_listen_data(command_type)
         while True:
-            data = self.ether.read()
+            data = self.ether.continue_read()
             if data is not None:
                 payload = data[8:8+payload_lens]
-                latest = self.ins_parse(payload)
+                latest = self.dm_parse(payload)
                 return latest
 
     def get_whole_data(self):
         '''out put all data 
         '''
+        self.ether.start_listen_data()
         while True:
-            self.ether.start_listen_data()
             data = self.ether.read()
-            if data is not None:
-                # print(data.hex())
-                latest = self.detect_packet(data)
-            if latest is not None:
-                return latest
+            print(data)
+            # if data is not None:
+            #     latest = self.detect_packet(data)
+            # if latest is not None:
+            #     return latest
 
     def detect_packet(self, data):
         packet_type = data[2:4].hex() # NO.2 & NO.4 bytes is the type of packet
