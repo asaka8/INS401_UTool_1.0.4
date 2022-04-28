@@ -34,6 +34,7 @@ class Ethernet_Dev:
         for i in range(lens):
             self.confirm_iface(iface_list[i])
             if self.iface_confirmed:
+                pass_print(f'[NetworkCard]{self.iface}')
                 result = True
                 break
             else:
@@ -42,6 +43,20 @@ class Ethernet_Dev:
                     error_print('No available Ethernet card was found.')
                     break
         return result
+
+    def update_ethernet_info(self):
+        self.iface_confirmed = False 
+
+        iface_list = self.get_network_card()
+        lens = len(iface_list)
+        for i in range(lens):
+            self.confirm_iface(iface_list[i])
+            if self.iface_confirmed:
+                break
+            else:
+                if i == len(iface_list) - 1:
+                    break
+        return self.iface_confirmed
 
     def ping_device(self):
         command_line = self.build_packet(
@@ -252,7 +267,6 @@ class Ethernet_Dev:
         if self.iface_confirmed:
             self.iface = iface[0]
             self.src_mac = iface[1]
-            pass_print(f'[NetworkCard]{self.iface}')
 
     def get_network_card(self):
         network_card_list = []
