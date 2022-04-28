@@ -66,3 +66,10 @@
 	1. Add a fuction that auto check whether data saving root exist, if not create the root
 	2. Add a class to generate the csv file for the data saving
 	3. Add a class for auto log parse data to the target csv file
+
+1.1:  Fixed some bugs of program
+	1. dm packet parse error
+	2. lose packet in auto log parse data
+	Optimized some function
+	1. optimized the build packet function, changed the way to add payload to packet, improve it universality
+	2. add a new function to connect device (to solve the problem that dst/src address cant sync when the connect operation and get dst/src address not in the same class)
