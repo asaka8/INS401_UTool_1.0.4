@@ -145,8 +145,8 @@ class Upgrade_Center:
     def upgrade_start(self, fw_path):
         self.upgrade_work_generator(fw_path)
         self.rtk_ins_work()
-        # self.sdk_work()
-        # self.imu_work()
+        self.sdk_work()
+        self.imu_work()
 
     def rtk_ins_work(self):
         # upgrade rtk/ins part of the device
