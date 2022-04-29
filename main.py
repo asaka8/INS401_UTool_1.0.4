@@ -18,13 +18,10 @@ from src.ethernet.data_center.data_visual import IMUDataVisual
 
 from src.ethernet.data_center.data_logger import DataLogger
 from src.communicator.print_center import error_print, pass_print
-
 from src.ethernet.upgrade_center.upgrade_driver import UpgradeDriver
+from src.communicator.ntip_center import RuNtrip
 
-# try:
-#     import RPi.GPIO as GPIO
-# except RuntimeError:
-#     print("Error import RPi.GPIO!")
+
 
 data_recv = DataCaptor()
 upgrade = Upgrade_Center()
@@ -82,9 +79,13 @@ class PingTest:
 class sample_time:
     def __init__(self) -> None:
         self.log_f = open('./timestamp_log.log', 'a+')
+        
         pass
 
     def get_pps_time(self):
+        '''please use this funtion on raspberry env
+        '''
+        import RPi.GPIO as GPIO
         GPIO.setmode(GPIO)
         GPIO.setup(self.interrupt_pin,GPIO.IN)
         time.sleep(0.4)
@@ -112,5 +113,7 @@ class sample_time:
             t.join()
 
 if __name__ == '__main__':
-    upgrade_work()
+    # logger.start_log()
+    ntrip = RuNtrip()
+    ntrip.ntrip_client_thread()
 
