@@ -73,3 +73,12 @@
 	Optimized some function
 	1. optimized the build packet function, changed the way to add payload to packet, improve it universality
 	2. add a new function to connect device (to solve the problem that dst/src address cant sync when the connect operation and get dst/src address not in the same class)
+
+1.1.1: Add new function:
+	1. Add Ntrip to enable GNSS data to obtain differential decomposition
+	* Ntrip will be a thread proccess in program
+	* it can be turned on or off anytime when program run
+	Add two test sample in main.py
+	1. INS401 connection speed test (PingTest)
+	2. INS401 sampling time test (sample_time)
+
