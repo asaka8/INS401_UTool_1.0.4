@@ -119,9 +119,16 @@ class UpgradeDriver:
         message_bytes.extend(struct.pack('>I', num_bytes))
         message_bytes.extend(data)
         
+        self.ether.start_listen_data(0x03aa)
         self.ether.send_msg(command, message_bytes)
         if upgrade_flag == 0:
             time.sleep(20)
+        result = self.ether.read_until(None, [0x03, 0xaa], 2000)
+        if result == True:
+            return
+        else:
+            error_print('Send "WA" command failed')
+            self.kill_app(1, 2)
 
     # IMU upgrade protocol
     def imu_jump2boot(self, waiting_time):
