@@ -53,7 +53,7 @@ class UpgradeDriver:
         else:
             self.logger.start_log(result)
             error_print('reshake failed')
-            self.kill_app(1, 2)
+            self.kill_app()
             
 
     def jump2boot(self, waiting_time):
@@ -75,7 +75,7 @@ class UpgradeDriver:
         if result[0] == False:
             self.logger.start_log(result[0], result[1])
             error_print('send JI command failed')
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def jump2app(self, waiting_time):
         command = CMD_list['JA']
@@ -94,8 +94,9 @@ class UpgradeDriver:
                 return
         
         if result[0] == False:
+            self.logger.start_log(result[0], result[1])
             error_print('send JA command failed')
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def before_write_content(self, core, content_len):
         command = CMD_list['CS']
@@ -116,11 +117,11 @@ class UpgradeDriver:
         #         print('Set update core and Bin size success')
         #     elif update_core == 'F':
         #         print('Set update core and Bin size Failed')
-        #         self.kill_app(1, 2)
+        #         self.kill_app()
             
         if result is None:
             error_print(f'send cs command failed, core:{ord(core)}')
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def write_block(self, num_bytes, current, upgrade_flag, data):
         command = CMD_list['WA']
@@ -138,71 +139,14 @@ class UpgradeDriver:
         Disable this code to speed up the upgrade
         If you want to upgrade more safty please enable it, but the upgrade time will incrase about 5mins
         '''
-        result = self.ether.read_until(None, [0x03, 0xaa], 2000)
-        if result[0] == True:
-            self.logger.start_log(result[0])
-            return
-        else:
-            self.logger.start_log(result[0], result[1])
-            error_print('Send "WA" command failed')
-            self.kill_app(1, 2)
-
-    # IMU upgrade protocol
-    def imu_jump2boot(self, waiting_time):
-        command = CMD_list['IMU_JI']
-        message_bytes = []
-
-        self.ether.start_listen_data(0x4a49)
-        
-        for i in range(3):
-            self.ether.send_msg(command, message_bytes)
-            result = self.ether.read_until(None, [0x4a, 0x49], 2000)
-
-            if result[0] == True:
-                time.sleep(waiting_time)
-                return
-        
-        if result[0] == False:
-            error_print('send IMU_JI command failed')
-            self.kill_app(1, 2)
-
-    def imu_jump2app(self, waiting_time):
-        command = CMD_list['IMU_JA']
-        message_bytes = []
-
-        self.ether.start_listen_data(0x4a41)
-        for i in range(3):
-            self.ether.send_msg(command, message_bytes)
-            result = self.ether.read_until(None, [0x4a, 0x41], 2000)
-
-            if result[0] == True:
-                time.sleep(waiting_time)
-                return
-        
-        error_print('send IMU_JA command failed')
-        self.kill_app(1, 2)
-
-    def imu_write_block(self, data_len, current, upgrade_flag, data):
-        command = CMD_list['IMU_WA'] # command 'WA'
-        message_bytes = []
-        current_bytes = struct.pack('>I', current)
-        message_bytes.extend(current_bytes)
-        num_bytes = struct.pack('>B', data_len)
-        message_bytes.extend(num_bytes)
-        message_bytes.extend(data)
-        # check_data = current_bytes + num_bytes
-
-        self.ether.start_listen_data(0x5741)
-        self.ether.send_msg(command, message_bytes)
-        if upgrade_flag == 0:
-            time.sleep(5)
-        result = self.ether.read_until(None, [0x57, 0x41], 2000)
-
-        if result[0] == True:
-            return
-    
-        error_print('send WA command failed')
-        self.kill_app(1, 2)
+        # result = self.ether.read_until(None, [0x03, 0xaa], 2000)
+        # if result[0] == True:
+        #     self.logger.start_log(result[0])
+        #     return
+        # else:
+        #     self.logger.start_log(result[0], result[1])
+        #     error_print('Send "WA" command failed')
+        #     self.kill_app()
 
     # 9100sdk upgrade protocol
     def sdk_jump2boot(self, waiting_time):
@@ -212,14 +156,17 @@ class UpgradeDriver:
         self.ether.start_listen_data(0x05aa)
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
+            self.logger.start_log()
             result = self.ether.read_until(None, [0x05, 0xaa], 2000)
             if result[0] == True:
+                self.logger.start_log(result[0])
                 time.sleep(waiting_time)
                 return
     
-        if result[0] == False:        
+        if result[0] == False:
+            self.logger.start_log(result[0], result[1])        
             error_print('JS command send failed')
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def sdk_jump2app(self, waiting_time):
         command = CMD_list['JG']
@@ -228,14 +175,17 @@ class UpgradeDriver:
         self.ether.start_listen_data(0x06aa)
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
+            self.logger.start_log()
             result = self.ether.read_until(None, [0x06, 0xaa], 2000)
             if result[0] == True:
+                self.logger.start_log(result[0])
                 time.sleep(waiting_time)
                 return
         
         if result[0] == False:
+            self.logger.start_log(result[0], result[1])
             error_print('JG command send failed')
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def sdk_sync(self):
         command = b'\x07\xaa'
@@ -247,13 +197,16 @@ class UpgradeDriver:
 
         for _ in range(retry):
             response = self.ether.write_read_response(command, sync, True, 2)
+            self.logger.start_log()
             if response[1] != []:
                 break
 
         if response[2] == bytes([0x3A, 0x54, 0x2C, 0xA6]):
             # print(response[2])
             result = True
+            self.logger.start_log(result)
         else:
+            self.logger.start_log(result, response[2])
             return result
         return result
 
@@ -463,6 +416,62 @@ class UpgradeDriver:
         self.ether.start_listen_data()
         return self.ether.read_until([0xCC], [0x07, 0xaa], 2000)[0]
 
+    # IMU upgrade protocol
+    def imu_jump2boot(self, waiting_time):
+        command = CMD_list['IMU_JI']
+        message_bytes = []
+
+        self.ether.start_listen_data(0x4a49)
+        
+        for i in range(3):
+            self.ether.send_msg(command, message_bytes)
+            result = self.ether.read_until(None, [0x4a, 0x49], 2000)
+
+            if result[0] == True:
+                time.sleep(waiting_time)
+                return
+        
+        if result[0] == False:
+            error_print('send IMU_JI command failed')
+            self.kill_app()
+
+    def imu_jump2app(self, waiting_time):
+        command = CMD_list['IMU_JA']
+        message_bytes = []
+
+        self.ether.start_listen_data(0x4a41)
+        for i in range(3):
+            self.ether.send_msg(command, message_bytes)
+            result = self.ether.read_until(None, [0x4a, 0x41], 2000)
+
+            if result[0] == True:
+                time.sleep(waiting_time)
+                return
+        
+        error_print('send IMU_JA command failed')
+        self.kill_app()
+
+    def imu_write_block(self, data_len, current, upgrade_flag, data):
+        command = CMD_list['IMU_WA'] # command 'WA'
+        message_bytes = []
+        current_bytes = struct.pack('>I', current)
+        message_bytes.extend(current_bytes)
+        num_bytes = struct.pack('>B', data_len)
+        message_bytes.extend(num_bytes)
+        message_bytes.extend(data)
+        # check_data = current_bytes + num_bytes
+
+        self.ether.start_listen_data(0x5741)
+        self.ether.send_msg(command, message_bytes)
+        if upgrade_flag == 0:
+            time.sleep(5)
+        result = self.ether.read_until(None, [0x57, 0x41], 2000)
+
+        if result[0] == True:
+            return
+    
+        error_print('send WA command failed')
+        self.kill_app()
 
     '''other function
     '''
@@ -476,7 +485,7 @@ class UpgradeDriver:
             pass_print(result[1])
             return
         else:
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def fw_content_setup(self, fw_path):
         fw_file = open(fw_path, "rb")
@@ -502,13 +511,16 @@ class UpgradeDriver:
             version_num = int( version_num_str.replace('.', ''))
         else:
             error_print(f'RTK/INS APP INFO ERROR')
-            self.kill_app(1, 2)
+            self.kill_app()
         
-        if version_num < 280203:
+        if len(str(version_num)) == 6 and version_num < 280203:
             return True
-        else:
+        elif len(str(version_num)) == 6 and version_num >= 280203:
             return False
-
+        elif len(str(version_num)) == 4 and version_num < 2803:
+            return True
+        elif len(str(version_num)) == 4 and version_num >= 2803:
+            return False
 
     # reset the device
     def reset_device(self):
