@@ -64,13 +64,16 @@ class UpgradeDriver:
          
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
+            self.logger.start_log()
             result = self.ether.read_until(None, [0x01, 0xaa], 2000)
 
             if result[0] == True:
+                self.logger.start_log(result[0])
                 time.sleep(waiting_time)
                 return
         
         if result[0] == False:
+            self.logger.start_log(result[0], result[1])
             error_print('send JI command failed')
             self.kill_app(1, 2)
 
@@ -82,9 +85,11 @@ class UpgradeDriver:
          
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
+            self.logger.start_log()
             result = self.ether.read_until(None, [0x02, 0xaa], 2000)
 
             if result[0] == True:
+                self.logger.start_log(result[0])
                 time.sleep(waiting_time)
                 return
         
@@ -126,18 +131,21 @@ class UpgradeDriver:
         
         # self.ether.start_listen_data(0x03aa)
         self.ether.send_msg(command, message_bytes)
+        self.logger.start_log()
         if upgrade_flag == 0:
             time.sleep(20)
         '''
         Disable this code to speed up the upgrade
         If you want to upgrade more safty please enable it, but the upgrade time will incrase about 5mins
         '''
-        # result = self.ether.read_until(None, [0x03, 0xaa], 2000)
-        # if result[0] == True:
-        #     return
-        # else:
-        #     error_print('Send "WA" command failed')
-        #     self.kill_app(1, 2)
+        result = self.ether.read_until(None, [0x03, 0xaa], 2000)
+        if result[0] == True:
+            self.logger.start_log(result[0])
+            return
+        else:
+            self.logger.start_log(result[0], result[1])
+            error_print('Send "WA" command failed')
+            self.kill_app(1, 2)
 
     # IMU upgrade protocol
     def imu_jump2boot(self, waiting_time):
@@ -508,6 +516,6 @@ class UpgradeDriver:
         return self.ether.send_msg(command)
 
     # kill main thread 
-    def kill_app(self, signal_int, call_back):
+    def kill_app(self):
         os.kill(os.getpid(), signal.SIGTERM)
         sys.exit()
