@@ -6,12 +6,14 @@ import time
 import signal
 import struct
 import threading
+from unittest import result
 from urllib import response
 
 from tqdm import trange
 from ...communicator.ethernet_provider import Ethernet_Dev
 from .sdk_boot import XLDR_TESEO5_BOOTLOADER_CUT2, BLOCK_SIZE, CRC32_TAB
 from ...communicator.print_center import error_print, pass_print
+from .upgrade_logger import UpgradeLogger
 
 CMD_start = [0x55, 0x55]
 
@@ -30,11 +32,14 @@ CMD_list = {
     'IMU_JI': b'\x49\x4a', # [0x49, 0x4a]
     'IMU_JA': b'\x41\x4a', # [0x41, 0x4a]
     'IMU_GP': b'\x47\x50', # [0x47, 0x50]
-    'IMU_WA': b'\x41\x57'} # [0x41, 0x57]
+    'IMU_WA': b'\x41\x57' # [0x41, 0x57]
+}
 
 class UpgradeDriver:
     def __init__(self):
         self.ether = Ethernet_Dev()
+        self.logger = UpgradeLogger()
+        self.logger.ulogf_generator()
 
     # RTK/INS upgrade protocol
     def shake_hand(self, retry_times=10):
@@ -45,10 +50,12 @@ class UpgradeDriver:
                 break
         
         if result == True:
+            self.logger.start_log(result)
             return
         else:
+            self.logger.start_log(result)
             error_print('reshake failed')
-            self.kill_app(1, 2)
+            self.kill_app()
             
 
     def jump2boot(self, waiting_time):
@@ -59,15 +66,18 @@ class UpgradeDriver:
          
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
+            self.logger.start_log()
             result = self.ether.read_until(None, [0x01, 0xaa], 2000)
 
-            if result == True:
+            if result[0] == True:
+                self.logger.start_log(result[0], result[1])
                 time.sleep(waiting_time)
                 return
         
-        if result == False:
+        if result[0] == False:
+            self.logger.start_log(result[0], result[1])
             error_print('send JI command failed')
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def jump2app(self, waiting_time):
         command = CMD_list['JA']
@@ -77,15 +87,18 @@ class UpgradeDriver:
          
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
+            self.logger.start_log()
             result = self.ether.read_until(None, [0x02, 0xaa], 2000)
 
-            if result == True:
+            if result[0] == True:
+                self.logger.start_log(result[0])
                 time.sleep(waiting_time)
                 return
         
-        if result == False:
+        if result[0] == False:
+            self.logger.start_log(result[0], result[1])
             error_print('send JA command failed')
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def before_write_content(self, core, content_len):
         command = CMD_list['CS']
@@ -106,11 +119,11 @@ class UpgradeDriver:
         #         print('Set update core and Bin size success')
         #     elif update_core == 'F':
         #         print('Set update core and Bin size Failed')
-        #         self.kill_app(1, 2)
+        #         self.kill_app()
             
         if result is None:
             error_print(f'send cs command failed, core:{ord(core)}')
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def write_block(self, num_bytes, current, upgrade_flag, data):
         command = CMD_list['WA']
@@ -119,66 +132,23 @@ class UpgradeDriver:
         message_bytes.extend(struct.pack('>I', num_bytes))
         message_bytes.extend(data)
         
+        # self.ether.start_listen_data(0x03aa)
         self.ether.send_msg(command, message_bytes)
+        self.logger.start_log()
         if upgrade_flag == 0:
             time.sleep(20)
-
-    # IMU upgrade protocol
-    def imu_jump2boot(self, waiting_time):
-        command = CMD_list['IMU_JI']
-        message_bytes = []
-
-        self.ether.start_listen_data(0x4a49)
-        
-        for i in range(3):
-            self.ether.send_msg(command, message_bytes)
-            result = self.ether.read_until(None, [0x4a, 0x49], 2000)
-
-            if result == True:
-                time.sleep(waiting_time)
-                return
-        
-        if result == False:
-            error_print('send IMU_JI command failed')
-            self.kill_app(1, 2)
-
-    def imu_jump2app(self, waiting_time):
-        command = CMD_list['IMU_JA']
-        message_bytes = []
-
-        self.ether.start_listen_data(0x4a41)
-        for i in range(3):
-            self.ether.send_msg(command, message_bytes)
-            result = self.ether.read_until(None, [0x4a, 0x41], 2000)
-
-            if result == True:
-                time.sleep(waiting_time)
-                return
-        
-        error_print('send IMU_JA command failed')
-        self.kill_app(1, 2)
-
-    def imu_write_block(self, data_len, current, upgrade_flag, data):
-        command = CMD_list['IMU_WA'] # command 'WA'
-        message_bytes = []
-        current_bytes = struct.pack('>I', current)
-        message_bytes.extend(current_bytes)
-        num_bytes = struct.pack('>B', data_len)
-        message_bytes.extend(num_bytes)
-        message_bytes.extend(data)
-        # check_data = current_bytes + num_bytes
-
-        self.ether.start_listen_data(0x5741)
-        self.ether.send_msg(command, message_bytes)
-        if upgrade_flag == 0:
-            time.sleep(5)
-        result = self.ether.read_until(None, [0x57, 0x41], 2000)
-
-        if result == True:
-            return
-    
-        error_print('send WA command failed')
-        self.kill_app(1, 2)
+        '''
+        Disable this code to speed up the upgrade
+        If you want to upgrade more safty please enable it, but the upgrade time will incrase about 5mins
+        '''
+        # result = self.ether.read_until(None, [0x03, 0xaa], 2000)
+        # if result[0] == True:
+            # self.logger.start_log(result[0], result[1])
+        #     return
+        # else:
+        #     self.logger.start_log(result[0], result[1])
+        #     error_print('Send "WA" command failed')
+        #     self.kill_app()
 
     # 9100sdk upgrade protocol
     def sdk_jump2boot(self, waiting_time):
@@ -188,14 +158,17 @@ class UpgradeDriver:
         self.ether.start_listen_data(0x05aa)
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
+            self.logger.start_log()
             result = self.ether.read_until(None, [0x05, 0xaa], 2000)
-            if result == True:
+            if result[0] == True:
+                self.logger.start_log(result[0], result[1])
                 time.sleep(waiting_time)
                 return
     
-        if result == False:        
+        if result[0] == False:
+            self.logger.start_log(result[0], result[1])        
             error_print('JS command send failed')
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def sdk_jump2app(self, waiting_time):
         command = CMD_list['JG']
@@ -204,14 +177,17 @@ class UpgradeDriver:
         self.ether.start_listen_data(0x06aa)
         for i in range(3):
             self.ether.send_msg(command, message_bytes)
+            self.logger.start_log()
             result = self.ether.read_until(None, [0x06, 0xaa], 2000)
-            if result == True:
+            if result[0] == True:
+                self.logger.start_log(result[0], result[1])
                 time.sleep(waiting_time)
                 return
         
-        if result == False:
+        if result[0] == False:
+            self.logger.start_log(result[0], result[1])
             error_print('JG command send failed')
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def sdk_sync(self):
         command = b'\x07\xaa'
@@ -223,13 +199,16 @@ class UpgradeDriver:
 
         for _ in range(retry):
             response = self.ether.write_read_response(command, sync, True, 2)
+            self.logger.start_log()
             if response[1] != []:
                 break
 
         if response[2] == bytes([0x3A, 0x54, 0x2C, 0xA6]):
             # print(response[2])
             result = True
+            self.logger.start_log(result, response[2])
         else:
+            self.logger.start_log(result, response[2])
             return result
         return result
 
@@ -242,9 +221,14 @@ class UpgradeDriver:
             self.ether.start_listen_data(0x07aa)
             self.ether.send_msg(command, sync_data)
             result = self.ether.read_until([0xCC], check_data, 2000)
-            if result == True:
-                return result
-        return result
+            if result[0] == True:
+                return result[0]
+        return result[0]
+    
+    def flash_write_pre(self, content):
+        data_to_sdk = content[0:BLOCK_SIZE]
+        self.ether.send_packet(list(data_to_sdk), send_method=[0x08, 0xaa])
+        self.logger.start_log()
 
     def change_buad(self):
         command = b'\x07\xaa'
@@ -253,10 +237,13 @@ class UpgradeDriver:
         for i in range(3):
             self.ether.start_listen_data(0x07aa)
             self.ether.send_msg(command, change_baud_cmd)
+            self.logger.start_log()
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
-            if result == True:
-                return result
-        return result
+            if result[0] == True:
+                self.logger.start_log(result[0], result[1])
+                return result[0]
+        self.logger.start_log(result[0], result[1])
+        return result[0]
 
     def send_baud(self, baud_int):
         command = b'\x07\xaa'
@@ -266,10 +253,13 @@ class UpgradeDriver:
         for i in range(3):
             self.ether.start_listen_data(0x07aa)
             self.ether.send_msg(command, baud_list)
+            self.logger.start_log()
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
-            if result == True:
-                return result
-        return result
+            if result[0] == True:
+                self.logger.start_log(result[0], result[1])
+                return result[0]
+        self.logger.start_log(result[0], result[1])        
+        return result[0]
 
     def baud_check(self):
         command = b'\x07\xaa'
@@ -278,10 +268,13 @@ class UpgradeDriver:
         for i in range(3):
             self.ether.start_listen_data(0x07aa)
             self.ether.send_msg(command, check_baud)
+            self.logger.start_log()
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
-            if result == True:
-                return result
-        return result
+            if result[0] == True:
+                self.logger.start_log(result[0], result[1])
+                return result[0]
+        self.logger.start_log(result[0], result[1])
+        return result[0]
 
     def is_host_ready(self):
         command = b'\x07\xaa'
@@ -290,10 +283,13 @@ class UpgradeDriver:
         for i in range(3):
             self.ether.start_listen_data(0x07aa)
             self.ether.send_msg(command, host)
+            self.logger.start_log()
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
-            if result == True:
-                return result
-        return result
+            if result[0] == True:
+                self.logger.start_log(result[0], result[1])
+                return result[0]
+        self.logger.start_log(result[0], result[1])
+        return result[0]
 
     def send_boot(self):
         boot_size = len(XLDR_TESEO5_BOOTLOADER_CUT2)
@@ -317,13 +313,25 @@ class UpgradeDriver:
                     0x83, 0x04, 0x01, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00]
 
         self.ether.send_packet(preamble)
+        self.logger.start_log('preamble')
         self.ether.send_packet(crc_val_boot_hex)
+        self.logger.start_log('boot crc')
         self.ether.send_packet(boot_size_hex)
+        self.logger.start_log('boot size')
         self.ether.send_packet(entry_hex)
+        self.logger.start_log('entry')
         self.ether.send_packet(boot_part1)
+        self.logger.start_log('boot part1')
         self.ether.send_packet(boot_part2)
+        self.logger.start_log('boot part2')
+
+        result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
+        if result[0] == True:
+            self.logger.start_log(result[0], result[1])
+        else:
+            self.logger.start_log(result[0], result[1])
         
-        return True
+        return result
 
     def send_write_flash(self):
         command = b'\x07\xaa'
@@ -332,10 +340,13 @@ class UpgradeDriver:
         for i in range(3):
             self.ether.start_listen_data(0x07aa)
             self.ether.send_msg(command, write_cmd)
+            self.logger.start_log()
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
-            if result == True:
-                return result
-        return result
+            if result[0] == True:
+                self.logger.start_log(result[0], result[1])
+                return result[0]
+        self.logger.start_log(result[0], result[1])
+        return result[0]
 
     def get_bin_info_list(self, fs_len, bin_data):
         bootMode = 0x01
@@ -391,19 +402,29 @@ class UpgradeDriver:
         for i in range(3):
             self.ether.start_listen_data()
             self.ether.send_packet(bin_info_list, buffer_size=512)
+            self.logger.start_log()
             time.sleep(3)
             result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
-            if result == True:
-                return result
-        return result
+            if result[0] == True:
+                self.logger.start_log(result[0], result[1])
+                return result[0]
+        self.logger.start_log(result[0], result[1])
+        return result[0]
 
-    def wait(self):
+    def wait(self, turns=None):
         self.ether.start_listen_data()
-        return self.ether.read_until([0xCC], [0x07, 0xaa], 500)
-
-    def flash_write_pre(self, content):
-        data_to_sdk = content[0:BLOCK_SIZE]
-        self.ether.send_packet(list(data_to_sdk), send_method=[0x08, 0xaa])
+        if turns is None:
+            return self.ether.read_until([0xCC], [0x07, 0xaa], 500)
+        if turns == 0:
+            result = self.ether.read_until([0xCC], [0x07, 0xaa], 500)
+            if result[0] == True:
+                self.logger.start_log(result[0], result[1], turns)
+            self.logger.start_log(result[0], result[1], turns)
+        if turns == 1:
+            result = self.ether.read_until([0xCC], [0x07, 0xaa], 500)
+            if result[1] == False:
+                self.logger.start_log(result[0], result[1], turns)
+            self.logger.start_log(result[0], result[1], turns)
 
     def flash_write(self, fs_len, bin_data):
         write_result = True
@@ -416,29 +437,99 @@ class UpgradeDriver:
                 data_to_sdk = bin_data[i*BLOCK_SIZE:(i+1)*BLOCK_SIZE]
 
             current += len(data_to_sdk)
-            for i in range(3):
-                self.ether.start_listen_data()
-                self.ether.send_packet(list(data_to_sdk))
-                has_read = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
-                if has_read:
-                    break
 
-            if has_read:
+            self.ether.start_listen_data()
+            self.ether.send_packet(list(data_to_sdk))
+            self.logger.start_log(turns=i)
+            has_read = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
+
+            if has_read[0] == True:
                 pass
             else:
+                self.logger.start_log(has_read[0], has_read[1], i)
                 write_result = False
                 break
-
+        self.logger.start_log(turns='last')
         return write_result
 
     def flash_crc(self):
         self.ether.start_listen_data()
-        return self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
+        result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
+        if result[0] == True:
+            self.logger.start_log(result[0], result[1])
+        else:
+            self.logger.start_log(result[0], result[1])
+        return result[0]
 
     def flash_restart(self):
         self.ether.start_listen_data()
-        return self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
+        result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
+        if result[0] == True:
+            self.logger.start_log(result[0], result[1])
+        else:
+            self.logger.start_log(result[0], result[1])
+        return result[0]
 
+    # IMU upgrade protocol
+    def imu_jump2boot(self, waiting_time):
+        command = CMD_list['IMU_JI']
+        message_bytes = []
+
+        self.ether.start_listen_data(0x4a49)
+        
+        for i in range(3):
+            self.ether.send_msg(command, message_bytes)
+            self.logger.start_log()
+            result = self.ether.read_until(None, [0x4a, 0x49], 2000)
+
+            if result[0] == True:
+                self.logger.start_log(result[0], result[1])
+                time.sleep(waiting_time)
+                return
+        
+        if result[0] == False:
+            self.logger.start_log(result[0], result[1])
+            error_print('send IMU_JI command failed')
+            self.kill_app()
+
+    def imu_jump2app(self, waiting_time):
+        command = CMD_list['IMU_JA']
+        message_bytes = []
+
+        self.ether.start_listen_data(0x4a41)
+        for i in range(3):
+            self.ether.send_msg(command, message_bytes)
+            result = self.ether.read_until(None, [0x4a, 0x41], 2000)
+
+            if result[0] == True:
+                time.sleep(waiting_time)
+                return
+        
+        error_print('send IMU_JA command failed')
+        self.kill_app()
+
+    def imu_write_block(self, data_len, current, upgrade_flag, data, turn=None):
+        command = CMD_list['IMU_WA'] # command 'WA'
+        message_bytes = []
+        current_bytes = struct.pack('>I', current)
+        message_bytes.extend(current_bytes)
+        num_bytes = struct.pack('>B', data_len)
+        message_bytes.extend(num_bytes)
+        message_bytes.extend(data)
+        # check_data = current_bytes + num_bytes
+
+        self.ether.start_listen_data(0x5741)
+        self.ether.send_msg(command, message_bytes)
+        self.logger.start_log(turns=turn)
+        if upgrade_flag == 0:
+            time.sleep(5)
+        result = self.ether.read_until(None, [0x57, 0x41], 2000)
+
+        if result[0] == True:
+            return
+    
+        error_print('send WA command failed')
+        self.kill_app()
 
     '''other function
     '''
@@ -452,7 +543,7 @@ class UpgradeDriver:
             pass_print(result[1])
             return
         else:
-            self.kill_app(1, 2)
+            self.kill_app()
 
     def fw_content_setup(self, fw_path):
         fw_file = open(fw_path, "rb")
@@ -478,13 +569,16 @@ class UpgradeDriver:
             version_num = int( version_num_str.replace('.', ''))
         else:
             error_print(f'RTK/INS APP INFO ERROR')
-            self.kill_app(1, 2)
+            self.kill_app()
         
-        if version_num < 280203:
+        if len(str(version_num)) == 6 and version_num < 280203:
             return True
-        else:
+        elif len(str(version_num)) == 6 and version_num >= 280203:
             return False
-
+        elif len(str(version_num)) == 4 and version_num < 2803:
+            return True
+        elif len(str(version_num)) == 4 and version_num >= 2803:
+            return False
 
     # reset the device
     def reset_device(self):
@@ -492,6 +586,6 @@ class UpgradeDriver:
         return self.ether.send_msg(command)
 
     # kill main thread 
-    def kill_app(self, signal_int, call_back):
+    def kill_app(self):
         os.kill(os.getpid(), signal.SIGTERM)
         sys.exit()

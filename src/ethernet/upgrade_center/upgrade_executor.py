@@ -139,7 +139,7 @@ class Upgrade_Center:
         if pass_time != len(self.fw_part_list):
             error_print('Upgrade init Failed, please check the FW file')
             time.sleep(2)
-            self.driver.kill_app(1, 2)
+            self.driver.kill_app()
         
 
     def upgrade_start(self, fw_path):
@@ -258,7 +258,7 @@ class Upgrade_Center:
 
         for i in trange(write_turns):
             target_content = content[copy_side:(copy_side+step)]
-            self.driver.imu_write_block(step, copy_side, upgrade_flag, target_content)
+            self.driver.imu_write_block(step, copy_side, upgrade_flag, target_content, i)
             copy_side += step
             current_side += step
             upgrade_flag += 1
@@ -272,43 +272,46 @@ class Upgrade_Center:
         bin_info_list = self.driver.get_bin_info_list(content_len, content)
         if self.driver.sdk_sync() == False:
             error_print('sdk sync failed')
-            self.driver.kill_app(1, 2)
+            self.driver.kill_app()
         self.driver.flash_write_pre(content)
         time.sleep(0.1)
         if self.set_buad == True:
             if self.driver.change_buad() == False:
                 error_print('Prepare baudrate change command failed\n')
-                self.driver.kill_app(1, 2)
+                self.driver.kill_app()
             if self.driver.send_baud(230400) == False:
                 error_print('Send baudrate command failed\n')
-                self.driver.kill_app(1, 2)
+                self.driver.kill_app()
             if self.driver.baud_check() == False:
                 error_print('Baudrate check failed\n')
-                self.driver.kill_app(1, 2)
+                self.driver.kill_app()
         if self.driver.is_host_ready() == False:
             error_print('Host is not ready.\n')
-            self.driver.kill_app(1, 2)
+            self.driver.kill_app()
         if self.driver.send_boot() == False:
             error_print('SDK boot failed\n')
-            self.driver.kill_app(1, 2)
+            self.driver.kill_app()
         if self.driver.send_write_flash() == False:
             error_print('Prepare flash change command failed\n')
-            self.driver.kill_app(1, 2)
+            self.driver.kill_app()
         if self.driver.send_bin_info(bin_info_list) == False:
             error_print('Send binary info failed')
-            self.driver.kill_app(1, 2)
+            self.driver.kill_app()
         for i in range(2):
-            result = self.driver.wait()
-            if i == 0 and result == False:
-                error_print('Wait devinit failed')
-            elif i == 1 and result == False:
-                error_print('Wait erase failed')
+            if i == 0:
+                result = self.driver.wait(i)
+                if result == False:
+                    error_print('Wait devinit failed')
+            elif i == 1:
+                result = self.driver.wait(i)
+                if result == False:
+                    error_print('Wait erase failed')
 
         time.sleep(5)
 
         if self.driver.flash_write(content_len, content) == False:
             error_print('Write app bin failed')
-            self.driver.kill_app(1, 2)
+            self.driver.kill_app()
 
         for i in range(3):
             time.sleep(1)
