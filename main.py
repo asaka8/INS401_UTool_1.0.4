@@ -21,7 +21,6 @@ from src.communicator.ntip_center import RuNtrip
 from src.communicator.ethernet_provider import Ethernet_Dev
 from src.ethernet.command_center.command_center import CommandCenter
 
-
 sys.dont_write_bytecode = True
 
 def show_data():
@@ -129,47 +128,69 @@ class sample_time:
 
 def vehicle_code_module():
     cmd = CommandCenter()
-    cmd.connect()
     parser = argparse.ArgumentParser()
     parser.add_argument('-wvc', '--write_vcode', type=str, choices=['vcode'])
     parser.add_argument('-rvc', '--read_vcode', type=str, choices=['vcode'])
-    parser.add_argument('-svc', '--set_vcode', type=str, choices=['VF33', 'VF34', 'VF35', 'VF36'])
+    parser.add_argument('-svc', '--set_vcode', type=str, choices=['VF33', 'VF34', 'VF35', 'VF36', 'AC01', 'AC02'])
     parser.add_argument('-gvc', '--get_vcode', type=str, choices=['vcode'])
     parser.add_argument('-rsvc', '--reset_vcode', type=str, choices=['vcode'])
 
     parser.add_argument('-g', '--get_id', type=int, choices=[i for i in range(15)])
+    parser.add_argument('-s', '--save', type=str, choices=['vcode'])
 
     args = parser.parse_args()
     if args.write_vcode == 'vcode':
-        cmd.vehicle_code_params_generator()
-        cmd.write_vehicle_code()
+        cmd.connect()
+        # cmd.vehicle_code_params_generator()
+        # cmd.write_vehicle_code()
+        cmd.write_vehicle_code_test()
     if args.read_vcode == 'vcode':
+        cmd.connect()
         cmd.read_vehicle_code()
     
     if args.set_vcode == 'VF33':
+        cmd.connect()
         cmd.set_vehicle_code('VF33')
     if args.set_vcode == 'VF34':
+        cmd.connect()
         cmd.set_vehicle_code('VF34')
     if args.set_vcode == 'VF35':
+        cmd.connect()
         cmd.set_vehicle_code('VF35')
     if args.set_vcode == 'VF36':
+        cmd.connect()
         cmd.set_vehicle_code('VF36')
 
-    if args.set_vcode == 'VF37':
-        cmd.set_vehicle_code('VF37')
+    # test only
+    if args.set_vcode == 'AC01':
+        cmd.connect()
+        cmd.set_vehicle_code('AC01')
+    if args.set_vcode == 'AC02':
+        cmd.connect()
+        cmd.set_vehicle_code('AC02')
 
     if args.get_vcode == 'vcode':
+        cmd.connect()
         cmd.get_vehicle_setting()
     
     if args.reset_vcode == 'vcode':
+        cmd.connect()
         cmd.reset_vehicle_code()
     
     if args.get_id == 14:
+        cmd.connect()
         cmd.get_params(14)
+
+    if args.save == 'vcode':
+        cmd.connect()
+        cmd.save_params_setting()
+
+def logger():
+    logger = DataLogger()
+    logger.start_log()
 
 if __name__ == '__main__':
 
     vehicle_code_module()
-    # cmd = CommandCenter()
-    # cmd.connect()
-    # cmd.read_vehicle_code()
+    # upgrade_work()
+    # logger()
