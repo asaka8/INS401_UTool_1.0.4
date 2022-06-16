@@ -13,7 +13,7 @@ def dict_generator():
     imu_field_names = ['gps_week', 'gps_millisecs', 'x_accel', 'y_accel', 'z_accel', 'x_gyro', 'y_gyro', 'z_gyro']
     info_dict = (2206, 109810650, -0.007163992617279291, -0.017413578927516937, -9.788861274719238, -0.00860743410885334, -0.024918492883443832, -0.026526078581809998)
     data = dict(zip(imu_field_names, info_dict))
-    print('check ok')
+    # print('check ok')
 
 def logf_generator(func):
     def wraps(*args, **kargs):
