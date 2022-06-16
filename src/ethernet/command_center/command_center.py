@@ -14,9 +14,10 @@ from ...communicator.print_center import pass_print, error_print
 CMD_list = {
     'wvc': b'\x02\xfc', # [0xFC, 0x02]
     'rvc': b'\x03\xfc', # [0xFC, 0x03]
+    'gvc': b'\x07\xcc',
     'set': b'\x03\xcc',
     'get': b'\x02\xcc',
-    'gvc': b'\x07\xcc'
+    'save': b'\x04\xcc'    
 }
 
 class CommandCenter:
@@ -27,7 +28,10 @@ class CommandCenter:
         self.VF_34_params_lst = []
         self.VF_35_params_lst = []
         self.VF_36_params_lst = []
-
+        
+        # test only
+        self.AC_01_params_lst = [1.77, -0.41, -0.83, 0.51, 0.0, 0.77, 0.51, 0.0, 0.77, 0.0, 0.0, 180.0]
+        self.AC_02_params_lst = [1.77, -0.41, -0.83, 0.51, 0.0, 0.77, 0.51, 0.0, 0.77, 0.0, 0.0, 90.0]
     def connect(self):
         self.ether.find_device()
 
@@ -451,6 +455,10 @@ class CommandCenter:
             field_value_bytes = bytes([0x56, 0x46, 0x33, 0x35])
         if vcode == 'VF36':
             field_value_bytes = bytes([0x56, 0x46, 0x33, 0x36])
+        if vcode == 'AC01':
+            field_value_bytes = bytes([0x41, 0x43, 0x30, 0x31])
+        if vcode == 'AC02':
+            field_value_bytes = bytes([0x41, 0x43, 0x30, 0x32])
 
         message_bytes.extend(field_value_bytes)
 
@@ -500,17 +508,35 @@ class CommandCenter:
         field_id_bytes = struct.pack('<I', field_id)
         message_bytes.extend(field_id_bytes)
         get_response = self.ether.write_read_response(command, message_bytes)
-        print(get_response)
-        if get_response is not None:
+        # print(get_response)
+        if get_response is not None and field_id != 14:
             get_param_id_bytes = get_response[2][0:4]
             get_param_id = struct.unpack('<I', get_param_id_bytes)[0]
             get_param_value_bytes = get_response[2][4:8]
             get_param_value = struct.unpack('<f', get_param_value_bytes)[0]
             get_param_value = round(get_param_value, 1)
-
-            # print(f'paramID:{get_param_id}  paramValue:{get_param_value}')
+            print(f'paramID:{get_param_id}  paramValue:{get_param_value}')
+        elif get_response is not None and field_id == 14:
+            get_param_id_bytes = get_response[2][0:4]
+            get_param_id = struct.unpack('<I', get_param_id_bytes)[0]
+            get_param_value = get_response[2][4:8]
+            print(f'paramID:{get_param_id}  paramValue:{get_param_value}')
         else:
             print(f'get paramID:{get_param_id} failed')
+
+    def save_params_setting(self):
+        command = CMD_list['save']
+        message_bytes = []
+
+        save_response = self.ether.write_read_response(command, message_bytes)
+
+        if save_response is not None:
+            payload = save_response[2]
+            result = struct.unpack('<I', payload)
+        if result == 1:
+            print('save setting success')
+        else:
+            print('save setting failed')
 
     def calc_crc(self, payload):
         '''
@@ -531,6 +557,55 @@ class CommandCenter:
         crc_msb = (crc & 0xFF00) >> 8
         crc_lsb = (crc & 0x00FF)
         return [crc_msb, crc_lsb]
+
+
+    def write_vehicle_code_test(self):
+        command = CMD_list['wvc']
+        message_bytes = []
+        offset = 0 # U16
+        offset_buffer = struct.pack('<H', offset)
+        message_bytes.extend(offset_buffer)
+
+        data_crc = b''
+        version = 2 # U16
+        version_buffer = struct.pack('<H', version)
+        table_n = 2 # U16
+        table_n_buffer = struct.pack('<H', table_n)
+        vcode_1_buffer = b'AC01'
+        vcode_2_buffer = b'AC02'
+
+        ac01_params_buffer = b''
+        for i in range(len(self.AC_01_params_lst)):
+            param_buffer = struct.pack('<f', self.AC_01_params_lst[i])
+            ac01_params_buffer += param_buffer
+        ac02_params_buffer = b''
+        for i in range(len(self.AC_02_params_lst)):
+            param_buffer = struct.pack('<f', self.AC_02_params_lst[i])
+            ac02_params_buffer += param_buffer
+        reserved_buffer = b''
+        for i in range(19):
+            reserved = 0
+            reserved_bytes = struct.pack('<I', reserved)
+            reserved_buffer += reserved_bytes 
+        data_buffer = version_buffer + table_n_buffer + vcode_1_buffer + ac01_params_buffer + reserved_buffer + \
+            vcode_2_buffer + ac02_params_buffer + reserved_buffer
+        data_size = len(data_buffer) + 4
+        length = data_size # U16
+        length_bytes = struct.pack('<H', length)
+        message_bytes.extend(length_bytes)
+        data_size_buffer = struct.pack('<H', data_size)
+        data_buffer = data_size_buffer + data_buffer
+        data_crc = bytes(self.calc_crc(data_buffer))
+        message_bytes.extend(data_crc)
+        message_bytes.extend(data_buffer)
+
+        self.ether.start_listen_data(0x02FC)
+        self.ether.send_msg(command, message_bytes)
+        result = self.ether.read_until([0x00], [0x02, 0xFC], 200)
+        if result[0] == True:
+            pass_print('write vehicle code successed\n')
+        else:
+            error_print(f'write vehicle code failed\nERROR CMD: {result[1]}')
 
 if __name__ == '__main__':
     cmd = CommandCenter()
