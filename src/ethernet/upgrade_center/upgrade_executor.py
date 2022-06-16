@@ -258,7 +258,7 @@ class Upgrade_Center:
 
         for i in trange(write_turns):
             target_content = content[copy_side:(copy_side+step)]
-            self.driver.imu_write_block(step, copy_side, upgrade_flag, target_content)
+            self.driver.imu_write_block(step, copy_side, upgrade_flag, target_content, i)
             copy_side += step
             current_side += step
             upgrade_flag += 1
