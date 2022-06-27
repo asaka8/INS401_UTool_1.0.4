@@ -88,3 +88,12 @@
 	Optimized some functions
 	1. Checked & modified the time delay in sdk part upgrade
 	2. Add value return in read_until function
+
+1.1.3: Add new function:
+	1. Add command_center moudle to provide vehicle code function
+	* vehicle code function amongs two parts: a. Write vcode & Read vcode; b. Set vcode & Get vcode
+	2. Add command_center moudle to provide user command function (on going...)
+	Fixed some bugs of program 
+	1. Upgrade logger will lose some information when sdk part upgrade
+	2. Fixed some communicate bugs
+
