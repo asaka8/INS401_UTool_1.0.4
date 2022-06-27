@@ -1,6 +1,4 @@
-import datetime
-import os
-import sys
+# from this import s
 import time
 import struct
 import collections
@@ -234,11 +232,17 @@ class DataCaptor:
         gps_week = data[0]
         gps_millisecs = data[1]
         device_status_bit_field = data[2]
+
+        status_bit = bin(device_status_bit_field)[2:]
+        status_bit = status_bit[::-1]
+        gnss_data_status = status_bit[11]
+        gnss_signal_status = status_bit[12]
+
         imu_temperature = data[3]
         mcu_temperature = data[4]
         gnss_chip_temperature = data[5]
         return gps_week, gps_millisecs, device_status_bit_field, imu_temperature, mcu_temperature,\
-            gnss_chip_temperature
+            gnss_chip_temperature, gnss_data_status, gnss_signal_status
   
     def start(self):
         self.connect()

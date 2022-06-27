@@ -147,7 +147,13 @@ class RuNtrip:
     '''
 
     def ntrip_client_thread(self):
-        self.ntrip_rtcm_logf = open(f'ntrip_rtcm_{self.formatted_file_time}.bin', "ab")
+        data_dir = './data'
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        ntrip_log_dir = './data/ntrip_log'
+        if not os.path.exists(ntrip_log_dir):
+            os.makedirs(ntrip_log_dir)
+        self.ntrip_rtcm_logf = open(f'./data/ntrip_log/ntrip_rtcm_{self.formatted_file_time}.bin', "ab")
         self.ntrip.run()
 
     def ntrip_receive_callback(self, data):
@@ -175,3 +181,7 @@ class RuNtrip:
         crc_msb = (crc & 0xFF00) >> 8
         crc_lsb = (crc & 0x00FF)
         return [crc_msb, crc_lsb]
+
+if __name__ == '__main__':
+    ntrip = RuNtrip()
+    ntrip.ntrip_client_thread()

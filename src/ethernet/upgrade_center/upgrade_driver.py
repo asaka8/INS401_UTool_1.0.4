@@ -1,4 +1,3 @@
-from cgitb import reset
 import os 
 import sys
 import math
@@ -6,12 +5,10 @@ import time
 import signal
 import struct
 import threading
-from unittest import result
-from urllib import response
 
 from tqdm import trange
 from ...communicator.ethernet_provider import Ethernet_Dev
-from .sdk_boot import XLDR_TESEO5_BOOTLOADER_CUT2, BLOCK_SIZE, CRC32_TAB
+from .sdk_boot import XLDR_TESEO5_BOOTLOADER_CUT2, XLDR_TESEO5_BOOTLOADER_CUT2_new, BLOCK_SIZE, CRC32_TAB
 from ...communicator.print_center import error_print, pass_print
 from .upgrade_logger import UpgradeLogger
 
@@ -292,7 +289,8 @@ class UpgradeDriver:
         return result[0]
 
     def send_boot(self):
-        boot_size = len(XLDR_TESEO5_BOOTLOADER_CUT2)
+        # boot_size = len(XLDR_TESEO5_BOOTLOADER_CUT2)
+        boot_size = len(XLDR_TESEO5_BOOTLOADER_CUT2_new)
         boot_size_hex = []
         boot_size_hex = self.ether.get_list_from_int(boot_size)
 
@@ -301,13 +299,14 @@ class UpgradeDriver:
         entry_hex = [0, 0, 0, 0]
         crc_val_boot = self.ether.sdk_crc(crc_val_boot, entry_hex, 4)
         crc_val_boot = self.ether.sdk_crc(
-            crc_val_boot, XLDR_TESEO5_BOOTLOADER_CUT2, boot_size)
+            crc_val_boot, XLDR_TESEO5_BOOTLOADER_CUT2_new, boot_size)
         #crc_val_boot_hex=[0 for x in range(0,4)]
         crc_val_boot_hex = []
         crc_val_boot_hex = self.ether.get_list_from_int(crc_val_boot)
 
-        boot_part1 = XLDR_TESEO5_BOOTLOADER_CUT2[0:5120]
-        boot_part2 = XLDR_TESEO5_BOOTLOADER_CUT2[5120:]
+        boot_part1 = XLDR_TESEO5_BOOTLOADER_CUT2_new[0:5120]
+        boot_part2 = XLDR_TESEO5_BOOTLOADER_CUT2_new[5120:10240]
+        boot_part3 = XLDR_TESEO5_BOOTLOADER_CUT2_new[10240:]
 
         preamble = [0xf4, 0x01, 0xd5, 0xbc, 0x73, 0x40, 0x98,
                     0x83, 0x04, 0x01, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -324,6 +323,8 @@ class UpgradeDriver:
         self.logger.start_log('boot part1')
         self.ether.send_packet(boot_part2)
         self.logger.start_log('boot part2')
+        self.ether.send_packet(boot_part3)
+        self.logger.start_log('boot part3')
 
         result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
         if result[0] == True:
