@@ -32,7 +32,7 @@ def show_data():
 
 def upgrade_work():
     upgrade = Upgrade_Center()
-    fw_path = './bin/INS401_v28.05.bin'
+    fw_path = './bin/INS401_v28.04.16.bin'
     upgrade = Upgrade_Center()
     upgrade.upgrade_start(fw_path)
 
@@ -191,6 +191,6 @@ def logger():
 
 if __name__ == '__main__':
 
-    vehicle_code_module()
-    # upgrade_work()
+    # vehicle_code_module()
+    upgrade_work()
     # logger()
