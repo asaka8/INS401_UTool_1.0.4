@@ -8,10 +8,12 @@ from ...communicator.print_center import pass_print, error_print
 CMD_list = {
     'wvc': b'\x02\xfc', # [0xFC, 0x02]
     'rvc': b'\x03\xfc', # [0xFC, 0x03]
-    'gvc': b'\x07\xcc',
-    'set': b'\x03\xcc',
-    'get': b'\x02\xcc',
-    'save': b'\x04\xcc'
+    'gvc': b'\x07\xcc', # [0xCC, 0x07]
+    'pG': b'\x01\xcc', # [0xCC, 0x01]
+    'set': b'\x03\xcc', # [0xCC, 0x03]
+    'get': b'\x02\xcc', # [0xCC, 0x02]
+    'save': b'\x04\xcc', # [0xCC, 0x04]
+    'reset': b'\x06\xcc' # [0xCC, 0x06]
 }
 
 class CommandCenter:
@@ -472,79 +474,6 @@ class CommandCenter:
 
         print(params_lst)
 
-    # user command function 
-    def set_params(self):
-        command = CMD_list['set']
-        message_bytes = []
-
-        field_id = 1
-        field_id_bytes = struct.pack('<I', field_id)
-        message_bytes.extend(field_id_bytes)
-
-        field_value = 1.1
-        field_value_bytes = struct.pack('<f', field_value)
-        message_bytes.extend(field_value_bytes)
-
-        self.ether.send_msg(command, message_bytes)
-
-    def get_params(self, field_id):
-        command = CMD_list['get']
-        message_bytes = []
-
-        field_id_bytes = struct.pack('<I', field_id)
-        message_bytes.extend(field_id_bytes)
-        get_response = self.ether.write_read_response(command, message_bytes)
-        # print(get_response)
-        if get_response is not None and field_id != 14:
-            get_param_id_bytes = get_response[2][0:4]
-            get_param_id = struct.unpack('<I', get_param_id_bytes)[0]
-            get_param_value_bytes = get_response[2][4:8]
-            get_param_value = struct.unpack('<f', get_param_value_bytes)[0]
-            get_param_value = round(get_param_value, 1)
-            print(f'paramID:{get_param_id}  paramValue:{get_param_value}')
-        elif get_response is not None and field_id == 14:
-            get_param_id_bytes = get_response[2][0:4]
-            get_param_id = struct.unpack('<I', get_param_id_bytes)[0]
-            get_param_value = get_response[2][4:8]
-            print(f'paramID:{get_param_id}  paramValue:{get_param_value}')
-        else:
-            print(f'get paramID:{get_param_id} failed')
-
-    def save_params_setting(self):
-        command = CMD_list['save']
-        message_bytes = []
-
-        save_response = self.ether.write_read_response(command, message_bytes)
-
-        if save_response is not None:
-            payload = save_response[2]
-            result = struct.unpack('<I', payload)
-        if result == 1:
-            print('save setting success')
-        else:
-            print('save setting failed')
-
-    def calc_crc(self, payload):
-        '''
-        Calculates 16-bit CRC-CCITT
-        '''
-        crc = 0x1D0F
-        for bytedata in payload:
-            crc = crc ^ (bytedata << 8)
-            i = 0
-            while i < 8:
-                if crc & 0x8000:
-                    crc = (crc << 1) ^ 0x1021
-                else:
-                    crc = crc << 1
-                i += 1
-
-        crc = crc & 0xffff
-        crc_msb = (crc & 0xFF00) >> 8
-        crc_lsb = (crc & 0x00FF)
-        return [crc_msb, crc_lsb]
-
-
     def write_vehicle_code_test(self):
         command = CMD_list['wvc']
         message_bytes = []
@@ -592,6 +521,89 @@ class CommandCenter:
             pass_print('write vehicle code successed\n')
         else:
             error_print(f'write vehicle code failed\nERROR CMD: {result[1]}')
+
+    # user command function 
+    def set_params(self):
+        command = CMD_list['set']
+        message_bytes = []
+
+        field_id = 1
+        field_id_bytes = struct.pack('<I', field_id)
+        message_bytes.extend(field_id_bytes)
+
+        field_value = 1.1
+        field_value_bytes = struct.pack('<f', field_value)
+        message_bytes.extend(field_value_bytes)
+
+        self.ether.send_msg(command, message_bytes)
+
+    def get_params(self, field_id):
+        command = CMD_list['get']
+        message_bytes = []
+
+        field_id_bytes = struct.pack('<I', field_id)
+        message_bytes.extend(field_id_bytes)
+        get_response = self.ether.write_read_response(command, message_bytes)
+        # print(get_response)
+        if get_response is not None and field_id != 14:
+            get_param_id_bytes = get_response[2][0:4]
+            get_param_id = struct.unpack('<I', get_param_id_bytes)[0]
+            get_param_value_bytes = get_response[2][4:8]
+            get_param_value = struct.unpack('<f', get_param_value_bytes)[0]
+            get_param_value = round(get_param_value, 1)
+            print(f'paramID:{get_param_id}  paramValue:{get_param_value}')
+        elif get_response is not None and field_id == 14:
+            get_param_id_bytes = get_response[2][0:4]
+            get_param_id = struct.unpack('<I', get_param_id_bytes)[0]
+            get_param_value = get_response[2][4:8]
+            print(f'paramID:{get_param_id}  paramValue:{get_param_value}')
+        else:
+            error_print(f'get paramID:{get_param_id} failed')
+
+    def save_params_setting(self):
+        command = CMD_list['save']
+        message_bytes = []
+
+        save_response = self.ether.write_read_response(command, message_bytes)
+
+        if save_response is not None:
+            payload = save_response[2]
+            result = struct.unpack('<I', payload)
+        if result == 1:
+            pass_print('save setting success')
+        else:
+            error_print('save setting failed')
+
+    def system_reset(self):
+        command = CMD_list['reset']
+        message_bytes = []
+
+        reset_response = self.ether.write_read_response(command, message_bytes)
+
+        if reset_response:
+            pass_print('INS401 MCU reset success')
+        else:
+            error_print('INS401 MCU reset failed')
+
+    def calc_crc(self, payload):
+        '''
+        Calculates 16-bit CRC-CCITT
+        '''
+        crc = 0x1D0F
+        for bytedata in payload:
+            crc = crc ^ (bytedata << 8)
+            i = 0
+            while i < 8:
+                if crc & 0x8000:
+                    crc = (crc << 1) ^ 0x1021
+                else:
+                    crc = crc << 1
+                i += 1
+
+        crc = crc & 0xffff
+        crc_msb = (crc & 0xFF00) >> 8
+        crc_lsb = (crc & 0x00FF)
+        return [crc_msb, crc_lsb]
 
 if __name__ == '__main__':
     cmd = CommandCenter()
