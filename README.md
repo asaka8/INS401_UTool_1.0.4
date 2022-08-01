@@ -5,7 +5,7 @@ use ‘pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r repuirements.t
 
 Ubuntu 18.04:
   python 3.7
-  Lib: tcodump, https://scapy.readthedocs.io/en/latest/installation.html#debian-ubuntu-fedora
+  Lib: tcpdump, https://scapy.readthedocs.io/en/latest/installation.html#debian-ubuntu-fedora
   
 Windows 10:
   python 3.7
