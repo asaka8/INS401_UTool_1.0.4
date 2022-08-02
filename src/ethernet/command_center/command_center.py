@@ -542,9 +542,9 @@ class CommandCenter:
         set_response = struct.unpack('<I', set_response[2])[0]
 
         if set_response == 0:
-            pass_print('set vehicle code successed')
+            pass_print('set id parameter successed')
         else:
-            error_print('set vehicle code failed')
+            error_print('set id parameter failed')
 
     def get_params(self, field_id):
         command = CMD_list['get']
