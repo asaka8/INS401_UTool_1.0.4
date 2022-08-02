@@ -523,19 +523,28 @@ class CommandCenter:
             error_print(f'write vehicle code failed\nERROR CMD: {result[1]}')
 
     # user command function 
-    def set_params(self):
+    def set_params(self, field_id, val):
         command = CMD_list['set']
         message_bytes = []
 
-        field_id = 1
         field_id_bytes = struct.pack('<I', field_id)
         message_bytes.extend(field_id_bytes)
 
-        field_value = 1.1
+        if isinstance(val, float):
+            field_value = val
+        else:
+            field_value = float(val)
         field_value_bytes = struct.pack('<f', field_value)
         message_bytes.extend(field_value_bytes)
 
         self.ether.send_msg(command, message_bytes)
+        set_response = self.ether.write_read_response(command, message_bytes)
+        set_response = struct.unpack('<I', set_response[2])[0]
+
+        if set_response == 0:
+            pass_print('set vehicle code successed')
+        else:
+            error_print('set vehicle code failed')
 
     def get_params(self, field_id):
         command = CMD_list['get']
@@ -568,11 +577,14 @@ class CommandCenter:
 
         if save_response is not None:
             payload = save_response[2]
-            result = struct.unpack('<I', payload)
-        if result == 1:
+            result = struct.unpack('<I', payload)[0]
+        if result == 0:
             pass_print('save setting success')
-        else:
+        elif result == -1:
             error_print('save setting failed')
+            error_print(f'save command response: {result[0]}')
+        else:
+            error_print(f'save setting failed, response ERROR: {result[0]}')
 
     def system_reset(self):
         command = CMD_list['reset']
