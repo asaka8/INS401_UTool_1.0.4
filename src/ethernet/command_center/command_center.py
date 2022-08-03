@@ -1,4 +1,6 @@
+from email import message
 import os
+import time
 import json
 import struct
 
@@ -13,7 +15,8 @@ CMD_list = {
     'set': b'\x03\xcc', # [0xCC, 0x03]
     'get': b'\x02\xcc', # [0xCC, 0x02]
     'save': b'\x04\xcc', # [0xCC, 0x04]
-    'reset': b'\x06\xcc' # [0xCC, 0x06]
+    'reset': b'\x06\xcc', # [0xCC, 0x06]
+    'get_save_buffer': b'\x09\x0a' #[0x0a, 0x09]
 }
 
 class CommandCenter:
@@ -269,7 +272,7 @@ class CommandCenter:
             self.VF_36_params_lst.append(param)
         
     def reset_vehicle_code(self):
-        command = CMD_list['wvc']
+        command = CMD_list["wvc"]
         message_bytes = []
         offset = 0 # U16
         offset_buffer = struct.pack('<H', offset)
@@ -314,7 +317,7 @@ class CommandCenter:
             error_print(f'reset vehicle code failed\nERROR CMD: {result[1]}')
 
     def write_vehicle_code(self):
-        command = CMD_list['wvc']
+        command = CMD_list["wvc"]
         message_bytes = []
         offset = 0 # U16
         offset_buffer = struct.pack('<H', offset)
@@ -377,7 +380,7 @@ class CommandCenter:
             error_print(f'write vehicle code failed\nERROR CMD: {result[1]}')
 
     def read_vehicle_code(self):
-        command = CMD_list['rvc']
+        command = CMD_list["rvc"]
         message_bytes = []
         offset = 0
         offset_buffer = struct.pack('>H', offset)
@@ -430,7 +433,7 @@ class CommandCenter:
 
     def set_vehicle_code(self, vcode):
 
-        command = CMD_list['set']
+        command = CMD_list["set"]
         message_bytes = []
         field_id = 14
         field_id_bytes = struct.pack('<I', field_id)
@@ -459,7 +462,7 @@ class CommandCenter:
             error_print('set vehicle code failed')
 
     def get_vehicle_setting(self):
-        command = CMD_list['gvc']
+        command = CMD_list["get"]
         message_bytes = []
 
         check_response = self.ether.write_read_response(command, message_bytes)[2]
@@ -475,7 +478,7 @@ class CommandCenter:
         print(params_lst)
 
     def write_vehicle_code_test(self):
-        command = CMD_list['wvc']
+        command = CMD_list["wvc"]
         message_bytes = []
         offset = 0 # U16
         offset_buffer = struct.pack('<H', offset)
@@ -523,8 +526,24 @@ class CommandCenter:
             error_print(f'write vehicle code failed\nERROR CMD: {result[1]}')
 
     # user command function 
+    def get_product_info(self):
+        product_info = self.ether.ping_device()[1]
+        time_str = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
+        data_dir = './data'
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        
+        product_info_log_dir = './data/product_info'
+        if not os.path.exists(product_info_log_dir):
+            os.makedirs(product_info_log_dir)
+
+        logf = open(f'./data/product_info/PINFO_{time_str}.txt', 'w+')
+        logf.write(product_info)
+        print(product_info)
+
+
     def set_params(self, field_id, val):
-        command = CMD_list['set']
+        command = CMD_list["set"]
         message_bytes = []
 
         field_id_bytes = struct.pack('<I', field_id)
@@ -547,7 +566,7 @@ class CommandCenter:
             error_print('set id parameter failed')
 
     def get_params(self, field_id):
-        command = CMD_list['get']
+        command = CMD_list["get"]
         message_bytes = []
 
         field_id_bytes = struct.pack('<I', field_id)
@@ -570,7 +589,7 @@ class CommandCenter:
             error_print(f'get paramID:{get_param_id} failed')
 
     def save_params_setting(self):
-        command = CMD_list['save']
+        command = CMD_list["save"]
         message_bytes = []
 
         save_response = self.ether.write_read_response(command, message_bytes)
@@ -587,7 +606,7 @@ class CommandCenter:
             error_print(f'save setting failed, response ERROR: {result[0]}')
 
     def system_reset(self):
-        command = CMD_list['reset']
+        command = CMD_list["reset"]
         message_bytes = []
 
         reset_response = self.ether.write_read_response(command, message_bytes)
@@ -596,6 +615,12 @@ class CommandCenter:
             pass_print('INS401 MCU reset success')
         else:
             error_print('INS401 MCU reset failed')
+
+    def get_fixed_postion_buffer(self):
+        command = CMD_list["get_save_buffer"]
+        message_bytes = []
+
+        get_save_buffer_response = self.ether.write_read_response(command, message_bytes)
 
     def calc_crc(self, payload):
         '''
