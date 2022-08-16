@@ -72,7 +72,6 @@ class NtripClient:
     def clear_connect_headers(self):
         self.append_header_string = None
 
-
     def doConnect(self):
         self.is_connected = 0
         self.tcp_client_socket = socket(AF_INET, SOCK_STREAM)
@@ -134,10 +133,11 @@ class RuNtrip:
         self.local_time = time.localtime()
         self.formatted_file_time = time.strftime("%Y_%m_%d_%H_%M_%S", self.local_time)
         self.ether = Ethernet_Dev()
-        if self.ether.update_ethernet_info():
-            pass_print('Connect device successfully')
-        else:
-            error_print('Connect device failed Ntrip can not run, please check your device connection')
+        self.ether.update_ethernet_info()
+        # if self.ether.update_ethernet_info():
+        #     pass_print('Connect device successfully')
+        # else:
+        #     error_print('Connect device failed Ntrip can not run, please check your device connection')
         # ntrip init
         self.ntrip = NtripClient(self.ntrip_receive_callback)
         self.ntrip_rtcm_logf = None 
@@ -150,17 +150,17 @@ class RuNtrip:
         data_dir = './data'
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
-        ntrip_log_dir = './data/ntrip_log'
-        if not os.path.exists(ntrip_log_dir):
-            os.makedirs(ntrip_log_dir)
-        self.ntrip_rtcm_logf = open(f'./data/ntrip_log/ntrip_rtcm_{self.formatted_file_time}.bin', "ab")
+        ntrip_data_dir = './data/ntrip_data'
+        if not os.path.exists(ntrip_data_dir):
+            os.makedirs(ntrip_data_dir)
+        self.ntrip_rtcm_logf = open(f'./data/ntrip_data/ntrip_rtcm_{self.formatted_file_time}.bin', "ab")
         self.ntrip.run()
 
     def ntrip_receive_callback(self, data):
         if data is not None:
             base_rtcm_packet = self.ether.build_packet(
                 self.ether.get_dst_mac(), 
-                self.ether.get_src_mac(), 
+                self.ether.get_src_mac(),
                 b'\x02\x0b', bytes(data))
             self.ether.write(base_rtcm_packet)
 
@@ -181,7 +181,3 @@ class RuNtrip:
         crc_msb = (crc & 0xFF00) >> 8
         crc_lsb = (crc & 0x00FF)
         return [crc_msb, crc_lsb]
-
-if __name__ == '__main__':
-    ntrip = RuNtrip()
-    ntrip.ntrip_client_thread()
