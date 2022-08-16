@@ -31,6 +31,7 @@ class CommandCenter:
         # test only
         self.AC_01_params_lst = [1.77, -0.41, -0.83, 0.51, 0.0, 0.77, 0.51, 0.0, 0.77, 0.0, 0.0, 180.0]
         self.AC_02_params_lst = [1.77, -0.41, -0.83, 0.51, 0.0, 0.77, 0.51, 0.0, 0.77, 0.0, 0.0, 90.0]
+        
     def connect(self):
         self.ether.find_device()
 
@@ -529,15 +530,15 @@ class CommandCenter:
     def get_product_info(self):
         product_info = self.ether.ping_device()[1]
         time_str = time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime())
-        data_dir = './data'
+        data_dir = './logger'
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         
-        product_info_log_dir = './data/product_info'
+        product_info_log_dir = './logger/product_info'
         if not os.path.exists(product_info_log_dir):
             os.makedirs(product_info_log_dir)
 
-        logf = open(f'./data/product_info/PINFO_{time_str}.txt', 'w+')
+        logf = open(f'./logger/product_info/PINFO_{time_str}.txt', 'w+')
         logf.write(product_info)
         print(product_info)
 
