@@ -1,3 +1,4 @@
+import threading
 import time
 import psutil
 import numpy as np
@@ -16,7 +17,7 @@ class IMUDataVisual:
         accel_x_lst.append(float(accel_x))
         accel_x_lst[:-1] = accel_x_lst[1:]
         accel_x_lst[:-1].append(float(accel_x))
-
+            
         curve_accel_x.setData(accel_x_lst, pen='r')
     
     def get_imu_accel_y(self):
@@ -73,6 +74,7 @@ class IMUDataVisual:
         win.setMaximumSize(1000, 800)
         pg.setConfigOptions(antialias=True)
 
+
         # plotting for X-axis acceleration
         p1 = win.addPlot()
         p1.showGrid(x=True, y=True)
@@ -83,6 +85,7 @@ class IMUDataVisual:
         curve_accel_x = p1.plot()
 
         timer = pg.QtCore.QTimer()
+        timer.setInterval(1)
         timer.timeout.connect(self.get_imu_accel_x)
         win.nextRow()
 
@@ -108,7 +111,7 @@ class IMUDataVisual:
         curve_accel_z = p3.plot()
 
         timer.timeout.connect(self.get_imu_accel_z)
-        timer.start()
+        timer.start(10)
         
         app.exec_()
 
