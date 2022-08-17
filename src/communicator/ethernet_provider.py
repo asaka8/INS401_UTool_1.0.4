@@ -62,6 +62,7 @@ class Ethernet_Dev:
         command_line = self.build_packet(
         self.get_dst_mac(), self.get_src_mac(), PING_TYPE)
 
+        error_info = None
         data_buffer = []
         cmd_type = struct.unpack('>H', bytes(PING_TYPE))[0]
         time.sleep(0.1)
