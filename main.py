@@ -1,16 +1,8 @@
-from ast import arg
-from concurrent.futures import thread
-import os
-import sys
 import time
 import threading
-import numpy as np
 import argparse
-import pyqtgraph as pg
-import pyqtgraph.examples as example
 
 from src.communicator.print_center import error_print, pass_print
-from src.ethernet.upgrade_center import UpgradeDriver
 from src.ethernet.upgrade_center.upgrade_executor import Upgrade_Center
 from src.ethernet.data_center.data_captor import DataCaptor
 from src.ethernet.data_center.data_visual import IMUDataVisual
@@ -20,8 +12,6 @@ from src.communicator.print_center import error_print, pass_print
 from src.communicator.ntip_center import RuNtrip
 from src.communicator.ethernet_provider import Ethernet_Dev
 from src.ethernet.command_center.command_center import CommandCenter
-
-sys.dont_write_bytecode = True
 
 def show_data():
     data_recv = DataCaptor()
@@ -130,22 +120,27 @@ class Utool:
     def __init__(self) -> None:
         self.cmd = CommandCenter()
         self.parser = argparse.ArgumentParser()
-        pass
+        self.data_capter = DataCaptor()
+        self.data_logger = DataLogger()
+        
 
+    '''TODO
+    add descript of each command usage
+    '''
     def vehicle_code_module(self):
-        self.parser.add_argument('-wvc', '--write_vcode', type=str, choices=['vcode'])
-        self.parser.add_argument('-rvc', '--read_vcode', type=str, choices=['vcode'])
+        self.parser.add_argument('-wvc', dest='write_vcode', action='store_true')
+        self.parser.add_argument('-rvc', dest='read_vcode', action='store_true')
         self.parser.add_argument('-svc', '--set_vcode', type=str, choices=['VF33', 'VF34', 'VF35', 'VF36', 'AC01', 'AC02'])
-        self.parser.add_argument('-gvc', '--get_vcode', type=str, choices=['vcode'])
-        self.parser.add_argument('-rsvc', '--reset_vcode', type=str, choices=['vcode'])
+        self.parser.add_argument('-gvc', dest='get_vcode', action='store_true')
+        self.parser.add_argument('-rsvc', dest='reset_vcode', action='store_true')
 
         args = self.parser.parse_args()
-        if args.write_vcode == 'vcode':
+        if args.write_vcode:
             self.cmd.connect()
             self.cmd.vehicle_code_params_generator()
             self.cmd.write_vehicle_code()
             # cmd.write_vehicle_code_test() # test vcode AC01 AC02
-        if args.read_vcode == 'vcode':
+        if args.read_vcode:
             self.cmd.connect()
             self.cmd.read_vehicle_code()
         
@@ -170,28 +165,29 @@ class Utool:
             self.cmd.connect()
             self.cmd.set_vehicle_code('AC02')
 
-        if args.get_vcode == 'vcode':
-            self.cmd.connect()
-            self.cmd.get_vehicle_setting()
+        # if args.get_vcode:
+        #     self.cmd.connect()
+        #     self.cmd.get_vehicle_setting()
         
-        if args.reset_vcode == 'vcode':
+        if args.reset_vcode:
             self.cmd.connect()
             self.cmd.reset_vehicle_code()
-        
-        if args.get_id == 14:
-            self.cmd.connect()
-            self.cmd.get_params(14)
 
-        if args.save == 'vcode':
-            self.cmd.connect()
-            self.cmd.save_params_setting()
-
+    '''TODO
+    add descript of each command usage
+    '''
     def user_command_module(self):
+        self.parser.add_argument('-p', '--ping', type=str, choices=['ping']) 
         self.parser.add_argument('-s', '--set_id', type=int, choices=[i for i in range(15)])
         self.parser.add_argument('-g', '--get_id', type=int, choices=[i for i in range(15)])
         self.parser.add_argument('-S', '--save', type=str, choices='all')
+        self.parser.add_argument('-rs', '--reset', type=str, choices=['MCU', 'mcu'])
 
         args = self.parser.parse_args()
+        if args.ping == 'ping':
+            self.cmd.connect()
+            self.cmd.get_product_info()
+
         for i in range(15):
             if args.set_id == i:
                 self.cmd.connect()
@@ -201,19 +197,63 @@ class Utool:
         for i in range(15):
             if args.get_id == i:
                 self.cmd.connect()
-                self.cmd.get_params(i) 
-
+                self.cmd.get_params(i)
+            
         if args.save == 'all':
             self.cmd.connect()
             self.cmd.save_params_setting()
 
-    def logger():
-        logger = DataLogger()
-        logger.start_log()
+    def upgrade_module(self):
+        upgrade = Upgrade_Center()
+        fw_path = input('input firmware path:\n')
+        upgrade.upgrade_start(fw_path)
+
+    def accel_data_visualization(self):
+        data_visual = IMUDataVisual()
+        data_visual.accels_curve_runner()
+
+    def gyro_data_visualization(self):
+        data_visual = IMUDataVisual()
+        data_visual.gyros_curve_runner()
+
+    def ntrip_test(self):
+        ntrip = RuNtrip()
+        self.cmd.connect()
+        self.cmd.get_product_info()
+        # main_threads = []
+        ntrip_swtich_flag = input('Whether to enable ntrip: Y/N\n')
+        if ntrip_swtich_flag == 'y' or ntrip_swtich_flag == 'Y':
+            ntrip_thread = threading.Thread(target=ntrip.ntrip_client_thread)
+            ntrip_thread.start()
+            time.sleep(10)
+            # main_threads.append(ntrip_thread)
+        elif ntrip_swtich_flag == 'n' or ntrip_swtich_flag == 'N':
+            pass_print('ntrip has been disabled')
+        data_logger_thread = threading.Thread(target=self.data_logger.start_log)
+        data_logger_thread.start()
+        # main_threads.append(data_logger_thread)
+
+    def start(self):
+        self.parser.add_argument('-vis', '--data_visual', type=str, choices=['accel', 'gyro'])
+        self.parser.add_argument('--log', dest='data_log', action='store_true')
+        self.parser.add_argument('--upgrade', dest='upgrade', action='store_true')
+
+        self.vehicle_code_module()
+        self.user_command_module()
+        
+        args = self.parser.parse_args()
+        if args.data_visual == 'accel':
+            self.accel_data_visualization()
+        elif args.data_visual == 'gyro':
+            self.gyro_data_visualization()
+
+        if args.data_log:
+            self.ntrip_test()
+            
+        if args.upgrade:
+            self.upgrade_module()
 
 if __name__ == '__main__':
 
     U = Utool()
-    U.user_command_module()
-    # upgrade_work()
-    # logger()
+    U.start()
