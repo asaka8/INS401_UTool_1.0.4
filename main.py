@@ -127,14 +127,23 @@ class Utool:
     '''TODO
     add descript of each command usage
     '''
-    def vehicle_code_module(self):
+    def command_module(self):
+        # vehicle code
         self.parser.add_argument('-wvc', dest='write_vcode', action='store_true')
         self.parser.add_argument('-rvc', dest='read_vcode', action='store_true')
         self.parser.add_argument('-svc', '--set_vcode', type=str, choices=['VF33', 'VF34', 'VF35', 'VF36', 'AC01', 'AC02'])
         self.parser.add_argument('-gvc', dest='get_vcode', action='store_true')
         self.parser.add_argument('-rsvc', dest='reset_vcode', action='store_true')
 
+        # user command
+        self.parser.add_argument('-p', dest='ping', action='store_true') 
+        self.parser.add_argument('-set', '--set_id', type=int, choices=[i for i in range(15)])
+        self.parser.add_argument('-g', '--get_id', type=int, choices=[i for i in range(15)])
+        self.parser.add_argument('-save', dest='save', action='store_true')
+        self.parser.add_argument('-rs', dest='reset', action='store_true')
+
         args = self.parser.parse_args()
+        # vehicle code
         if args.write_vcode:
             self.cmd.connect()
             self.cmd.vehicle_code_params_generator()
@@ -157,6 +166,10 @@ class Utool:
             self.cmd.connect()
             self.cmd.set_vehicle_code('VF36')
 
+        if args.get_vcode:
+            self.cmd.connect()
+            self.cmd.get_vehicle_setting()
+
         # test only
         if args.set_vcode == 'AC01':
             self.cmd.connect()
@@ -165,26 +178,12 @@ class Utool:
             self.cmd.connect()
             self.cmd.set_vehicle_code('AC02')
 
-        # if args.get_vcode:
-        #     self.cmd.connect()
-        #     self.cmd.get_vehicle_setting()
-        
         if args.reset_vcode:
             self.cmd.connect()
             self.cmd.reset_vehicle_code()
 
-    '''TODO
-    add descript of each command usage
-    '''
-    def user_command_module(self):
-        self.parser.add_argument('-p', '--ping', type=str, choices=['ping']) 
-        self.parser.add_argument('-s', '--set_id', type=int, choices=[i for i in range(15)])
-        self.parser.add_argument('-g', '--get_id', type=int, choices=[i for i in range(15)])
-        self.parser.add_argument('-S', '--save', type=str, choices='all')
-        self.parser.add_argument('-rs', '--reset', type=str, choices=['MCU', 'mcu'])
-
-        args = self.parser.parse_args()
-        if args.ping == 'ping':
+        # user command
+        if args.ping:
             self.cmd.connect()
             self.cmd.get_product_info()
 
@@ -199,9 +198,13 @@ class Utool:
                 self.cmd.connect()
                 self.cmd.get_params(i)
             
-        if args.save == 'all':
+        if args.save:
             self.cmd.connect()
             self.cmd.save_params_setting()
+
+        if args.reset:
+            self.cmd.connect()
+            self.cmd.system_reset()
 
     def upgrade_module(self):
         upgrade = Upgrade_Center()
@@ -238,8 +241,7 @@ class Utool:
         self.parser.add_argument('--log', dest='data_log', action='store_true')
         self.parser.add_argument('--upgrade', dest='upgrade', action='store_true')
 
-        self.vehicle_code_module()
-        self.user_command_module()
+        self.command_module()
         
         args = self.parser.parse_args()
         if args.data_visual == 'accel':
