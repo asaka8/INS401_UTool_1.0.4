@@ -285,9 +285,9 @@ class CommandCenter:
         data_crc = b''
         version = 0 # U16
         version_buffer = struct.pack('<H', version)
-        table_n = 1 # U16
+        table_n = 0 # U16
         table_n_buffer = struct.pack('<H', table_n)
-        vcode_1_buffer = b'NONE'
+        vcode_1_buffer = b'\xff\xff\xff\xff'
      
         reset_params_buffer = b''
         for i in range(12):
@@ -463,7 +463,7 @@ class CommandCenter:
             error_print('set vehicle code failed')
 
     def get_vehicle_setting(self):
-        command = CMD_list["get"]
+        command = CMD_list["gvc"]
         message_bytes = []
 
         check_response = self.ether.write_read_response(command, message_bytes)[2]
