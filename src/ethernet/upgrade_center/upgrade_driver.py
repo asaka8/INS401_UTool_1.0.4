@@ -106,6 +106,8 @@ class UpgradeDriver:
         for _ in range(3):
             time.sleep(1)
             result = self.ether.write_read_response(command, message_bytes)
+            print(result[2])
+            self.logger.start_log(result[2])
             time.sleep(1)
             if result[2] != []:
                 break
@@ -124,19 +126,23 @@ class UpgradeDriver:
 
     def write_block(self, num_bytes, current, upgrade_flag, data):
         command = CMD_list['WA']
-        message_bytes = []
-        message_bytes.extend(struct.pack('>I', current))
-        message_bytes.extend(struct.pack('>I', num_bytes))
-        message_bytes.extend(data)
-        
-        # self.ether.start_listen_data(0x03aa)
-        self.ether.send_msg(command, message_bytes)
-        self.logger.start_log()
+        if current != 7500907 and current != 6909555: # rtk & ins
+            message_bytes = []
+            message_bytes.extend(struct.pack('>I', current))
+            message_bytes.extend(struct.pack('>I', num_bytes))
+            message_bytes.extend(data)
+            
+            # self.ether.start_listen_data(0x03aa)
+            self.ether.send_msg(command, message_bytes)
+            self.logger.start_log(turns=upgrade_flag)
+
+        else:
+            self.logger.start_log(result=current, turns=upgrade_flag)
         if upgrade_flag == 0:
             time.sleep(20)
         '''
         Disable this code to speed up the upgrade
-        If you want to upgrade more safty please enable it, but the upgrade time will incrase about 5mins
+        If want to upgrade more safty please enable it, but the upgrade time will incrase about 5mins
         '''
         # result = self.ether.read_until(None, [0x03, 0xaa], 2000)
         # if result[0] == True:
@@ -288,9 +294,11 @@ class UpgradeDriver:
         self.logger.start_log(result[0], result[1])
         return result[0]
 
-    def send_boot(self):
-        # boot_size = len(XLDR_TESEO5_BOOTLOADER_CUT2)
-        boot_size = len(XLDR_TESEO5_BOOTLOADER_CUT2_new)
+    def send_boot(self, use_new_boot):
+        if use_new_boot == True:
+            boot_size = len(XLDR_TESEO5_BOOTLOADER_CUT2_new)
+        else:
+            boot_size = len(XLDR_TESEO5_BOOTLOADER_CUT2)
         boot_size_hex = []
         boot_size_hex = self.ether.get_list_from_int(boot_size)
 
@@ -298,15 +306,23 @@ class UpgradeDriver:
         crc_val_boot = self.ether.sdk_crc(crc_val_boot, boot_size_hex, 4)
         entry_hex = [0, 0, 0, 0]
         crc_val_boot = self.ether.sdk_crc(crc_val_boot, entry_hex, 4)
-        crc_val_boot = self.ether.sdk_crc(
-            crc_val_boot, XLDR_TESEO5_BOOTLOADER_CUT2_new, boot_size)
+        if use_new_boot == True:
+            crc_val_boot = self.ether.sdk_crc(
+                crc_val_boot, XLDR_TESEO5_BOOTLOADER_CUT2_new, boot_size)
+        else:
+            crc_val_boot = self.ether.sdk_crc(
+                crc_val_boot, XLDR_TESEO5_BOOTLOADER_CUT2, boot_size)
         #crc_val_boot_hex=[0 for x in range(0,4)]
         crc_val_boot_hex = []
         crc_val_boot_hex = self.ether.get_list_from_int(crc_val_boot)
 
-        boot_part1 = XLDR_TESEO5_BOOTLOADER_CUT2_new[0:5120]
-        boot_part2 = XLDR_TESEO5_BOOTLOADER_CUT2_new[5120:10240]
-        boot_part3 = XLDR_TESEO5_BOOTLOADER_CUT2_new[10240:]
+        if use_new_boot == True:
+            boot_part1 = XLDR_TESEO5_BOOTLOADER_CUT2_new[0:5120]
+            boot_part2 = XLDR_TESEO5_BOOTLOADER_CUT2_new[5120:10240]
+            boot_part3 = XLDR_TESEO5_BOOTLOADER_CUT2_new[10240:]
+        else:
+            boot_part1 = XLDR_TESEO5_BOOTLOADER_CUT2[0:5120]
+            boot_part2 = XLDR_TESEO5_BOOTLOADER_CUT2[5120:]
 
         preamble = [0xf4, 0x01, 0xd5, 0xbc, 0x73, 0x40, 0x98,
                     0x83, 0x04, 0x01, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00]
@@ -319,12 +335,18 @@ class UpgradeDriver:
         self.logger.start_log('boot size')
         self.ether.send_packet(entry_hex)
         self.logger.start_log('entry')
-        self.ether.send_packet(boot_part1)
-        self.logger.start_log('boot part1')
-        self.ether.send_packet(boot_part2)
-        self.logger.start_log('boot part2')
-        self.ether.send_packet(boot_part3)
-        self.logger.start_log('boot part3')
+        if use_new_boot == True:
+            self.ether.send_packet(boot_part1)
+            self.logger.start_log('boot part1')
+            self.ether.send_packet(boot_part2)
+            self.logger.start_log('boot part2')
+            self.ether.send_packet(boot_part3)
+            self.logger.start_log('boot part3')
+        else:
+            self.ether.send_packet(boot_part1)
+            self.logger.start_log('boot part1')
+            self.ether.send_packet(boot_part2)
+            self.logger.start_log('boot part2')
 
         result = self.ether.read_until([0xCC], [0x07, 0xaa], 2000)
         if result[0] == True:
@@ -511,23 +533,25 @@ class UpgradeDriver:
 
     def imu_write_block(self, data_len, current, upgrade_flag, data, turn=None):
         command = CMD_list['IMU_WA'] # command 'WA'
-        message_bytes = []
-        current_bytes = struct.pack('>I', current)
-        message_bytes.extend(current_bytes)
-        num_bytes = struct.pack('>B', data_len)
-        message_bytes.extend(num_bytes)
-        message_bytes.extend(data)
-        # check_data = current_bytes + num_bytes
+        if current != 6909301: # 6909301 => (ascii) imu
+            message_bytes = []
+            current_bytes = struct.pack('>I', current)
+            message_bytes.extend(current_bytes)
+            num_bytes = struct.pack('>B', data_len)
+            message_bytes.extend(num_bytes)
+            message_bytes.extend(data)
 
-        self.ether.start_listen_data(0x5741)
-        self.ether.send_msg(command, message_bytes)
-        self.logger.start_log(turns=turn)
-        if upgrade_flag == 0:
-            time.sleep(5)
-        result = self.ether.read_until(None, [0x57, 0x41], 2000)
+            self.ether.start_listen_data(0x5741)
+            self.ether.send_msg(command, message_bytes)
+            self.logger.start_log(turns=turn)
+            if upgrade_flag == 0:
+                time.sleep(5)
+            result = self.ether.read_until(None, [0x57, 0x41], 2000)
 
-        if result[0] == True:
-            return
+            if result[0] == True:
+                return
+        else:
+            self.logger.start_log(result=6909301, turns='last') # 6909301 => (ascii) imu
     
         error_print('send WA command failed')
         self.kill_app()
@@ -563,7 +587,7 @@ class UpgradeDriver:
 
         return data
 
-    def get_rtk_ins_version(self):
+    def sdk_upgrade_baud_change(self):
         result = self.ether.ping_device()
         if result[2] != None:
             version_num_str = result[2].lstrip('v')
@@ -580,6 +604,24 @@ class UpgradeDriver:
             return True
         elif len(str(version_num)) == 4 and version_num >= 2803:
             return False
+
+    def sdk_upgrade_boot_change(self):
+        result = self.ether.ping_device()
+        if result[2] != None:
+            version_num_str = result[2].lstrip('v')
+            version_num = int( version_num_str.replace('.', ''))
+        else:
+            error_print(f'RTK/INS APP INFO ERROR')
+            self.kill_app()
+        
+        if len(str(version_num)) == 6 and version_num < 280416:
+            return False
+        elif len(str(version_num)) == 6 and version_num >= 280416:
+            return True
+        elif len(str(version_num)) == 4 and version_num < 2805:
+            return False
+        elif len(str(version_num)) == 4 and version_num >= 2805:
+            return True
 
     # reset the device
     def reset_device(self):
