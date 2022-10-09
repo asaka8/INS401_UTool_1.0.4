@@ -136,9 +136,9 @@ class Utool:
         self.parser.add_argument('-rsvc', dest='reset_vcode', action='store_true')
 
         # user command
-        self.parser.add_argument('-p', dest='ping', action='store_true') 
+        self.parser.add_argument('-ping', dest='ping', action='store_true') 
         self.parser.add_argument('-set', '--set_id', type=int, choices=[i for i in range(15)])
-        self.parser.add_argument('-g', '--get_id', type=int, choices=[i for i in range(15)])
+        self.parser.add_argument('-get', '--get_id', type=int, choices=[i for i in range(15)])
         self.parser.add_argument('-save', dest='save', action='store_true')
         self.parser.add_argument('-rs', dest='reset', action='store_true')
 
