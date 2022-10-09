@@ -43,13 +43,13 @@ class UpgradeLogger:
         elif func_name == 'before_write_content' and result == '1':
             self.write('send "CS" command......\nReady to upgrade ins app\n')
         
-        if func_name == 'write_block' and result is None:
-            self.write('Send "WA" command......\n')
-        elif func_name == 'write_block' and result == True:
-            self.write(f'Write to flash successed\nCorrect feedback: {response}\n')
-        elif func_name == 'write_block' and result == False:
-            self.write(f'Write to flash failed\nERROR feedback: {response}\n')
-        
+        if func_name == 'write_block' and result is None and turns == 0:
+            self.write('Send "WA" command......\n...\n...\n')
+        elif func_name == 'write_block' and result == 7500907 and turns == 'last':
+            self.write(f'Write rtk firmware to flash successed\n')
+        elif func_name == 'write_block' and result == 6909555 and turns == 'last':
+            self.write(f'Write ins firmware to flash successed\n[RTK/INS] upgrade finished\n')
+
         # STA9100 part
         if func_name == 'sdk_jump2boot' and result is None:
             self.write('Send "JS" command to jump to SDK bootloader......\n')
@@ -108,6 +108,8 @@ class UpgradeLogger:
             self.write('Send the part one of boot......\n')
         elif func_name == 'send_boot' and result == 'boot part2':
             self.write('Send the part two of boot......\n')
+        elif func_name == 'send_boot' and result == 'boot part3':
+            self.write('Send the part three of boot......\n')
         elif func_name == 'send_boot' and result == True:
             self.write(f'Send boot program successed\nCorrect feedback: {response}\n')
         elif func_name == 'send_boot' and result == False:
@@ -141,7 +143,7 @@ class UpgradeLogger:
         elif func_name == 'flash_write' and result == False:
             self.write(f'Write to 9100 flash failed\nERROR feedback: {response}\n')
         elif func_name == 'flash_write' and turns == 'last':
-            self.write(f'Write to 9100 flash finished\n')
+            self.write(f'Write 9100 firmware to flash successed\n[SDK] upgrade finished\n')
 
         if func_name == 'flash_crc' and result == True:
             self.write(f'crc check successed\nCorrect feedback: {response}\n')
@@ -165,13 +167,11 @@ class UpgradeLogger:
             self.write(f'Send "IMU WA" cmd......\n...\n...\n')
         if func_name == 'imu_write_block' and result == False:
             self.write(f'Write IMU flash failed......\nERROR response: {response}\n')
-        if func_name == 'imu_write_block' and turns == 'last':
-            self.write(f'Write to imu flash finished\n')
+        if func_name == 'imu_write_block' and result == 6909301 and turns == 'last':
+            self.write(f'Write imu firmware to flash success\n[imu] upgrade finished')
 
         if func_name == 'imu_jump2app' and result is None:
-            self.write(f'')
-
-log = UpgradeLogger()
+            self.write(f'imu jump to app success')
 
         
 
