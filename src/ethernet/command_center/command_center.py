@@ -27,7 +27,6 @@ class CommandCenter:
         self.VF_34_params_lst = []
         self.VF_35_params_lst = []
         self.VF_36_params_lst = []
-        
         # test only
         self.AC_01_params_lst = [1.77, -0.41, -0.83, 0.51, 0.0, 0.77, 0.51, 0.0, 0.77, 0.0, 0.0, 180.0]
         self.AC_02_params_lst = [1.77, -0.41, -0.83, 0.51, 0.0, 0.77, 0.51, 0.0, 0.77, 0.0, 0.0, 90.0]
@@ -245,11 +244,11 @@ class CommandCenter:
                 ]
             }
 
-            json.dump(json_data, open('./setting/vcode_setting.json', 'w'), indent=4)
-            with open('./setting/vcode_setting.json') as json_file:
+            json.dump(json_data, open(json_dir, 'w'), indent=4)
+            with open(json_dir) as json_file:
                 properties = json.load(json_file)
         else:
-            with open('./setting/vcode_setting.json') as json_file:
+            with open(json_dir) as json_file:
                 properties = json.load(json_file)
 
         vf33_dict = properties["VF33"]
@@ -305,7 +304,8 @@ class CommandCenter:
         message_bytes.extend(length_bytes)
         data_size_buffer = struct.pack('<H', data_size)
         data_buffer = data_size_buffer + data_buffer
-        data_crc = bytes(self.calc_crc(data_buffer))
+        # data_crc = bytes(self.calc_crc(data_buffer))
+        data_crc = b'\xff\xff'
         message_bytes.extend(data_crc)
         message_bytes.extend(data_buffer)
 
@@ -393,6 +393,8 @@ class CommandCenter:
         self.ether.start_listen_data(0x03FC)
         self.ether.send_msg(command, message_bytes)
         result = self.ether.read_until(None, [0x03, 0xFC], 2000)
+        # print((result[1]).hex())
+        # time.sleep(3)
         if result[0] == True:
             data = result[1]
             param_sta_pos = data.find(b'VF33')
@@ -469,6 +471,11 @@ class CommandCenter:
         check_response = self.ether.write_read_response(command, message_bytes)[2]
 
         params_lst = []
+        vcode_valid = check_response[0]
+        vcode_table_vaild = check_response[1]
+        vcode_version_buffer = check_response[2:4]
+        vcode_version = struct.unpack('<H', vcode_version_buffer)
+        vehicle_type = check_response[4:8].decode()
         params_buffer = check_response[8:56]
         for i in range(int(len(params_buffer)/4)):
             params_bytes = params_buffer[i*4:i*4+4]
@@ -476,7 +483,7 @@ class CommandCenter:
             params = round(params, 6)
             params_lst.append(params)
 
-        print(params_lst)
+        print(f'vehicle code valid: {vcode_valid}\nvehicle code table valid: {vcode_table_vaild}\nvehicle code version: {vcode_version[0]}\nvehicle type: {vehicle_type}\nparameters: {params_lst}')
 
     def write_vehicle_code_test(self):
         command = CMD_list["wvc"]
