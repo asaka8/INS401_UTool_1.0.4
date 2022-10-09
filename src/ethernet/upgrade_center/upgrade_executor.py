@@ -15,7 +15,8 @@ class Upgrade_Center:
     def __init__(self):
         self.driver = UpgradeDriver()
         self.ether = Ethernet_Dev()
-        self.set_buad = True
+        self.use_new_baud = True
+        self.use_new_boot = True
         self.is_stop = False
         self.part_name_list = []
         self.flag_list = []
@@ -144,9 +145,12 @@ class Upgrade_Center:
 
     def upgrade_start(self, fw_path):
         self.upgrade_work_generator(fw_path)
-        self.rtk_ins_work()
-        self.sdk_work()
-        self.imu_work()
+        if 'rtk' and 'ins' in self.part_name_list:
+            self.rtk_ins_work()
+        if 'sdk' in self.part_name_list:
+            self.sdk_work()
+        if 'imu' in self.part_name_list:
+            self.imu_work()
 
     def rtk_ins_work(self):
         # upgrade rtk/ins part of the device
@@ -169,7 +173,8 @@ class Upgrade_Center:
         # upgrade sdk9100 part of the device
         if 'sdk' in self.part_name_list:
             self.driver.shake_hand() 
-            self.set_buad = self.driver.get_rtk_ins_version()
+            self.use_new_baud = self.driver.sdk_upgrade_baud_change()
+            self.use_new_boot = self.driver.sdk_upgrade_boot_change()
             self.driver.sdk_jump2boot(3)
             self.driver.shake_hand()
             sdk_part_postion = self.part_name_list.index('sdk')
@@ -213,6 +218,7 @@ class Upgrade_Center:
             time.sleep(0.01)
             current_side += step
             upgrade_flag += 1
+        self.driver.write_block(0, 7500907, 'last', []) # 7500907 => (ascii) rtk
         
         extract_content_flag = content_len - (step * write_turns)
         extract_content = content[(content_len-extract_content_flag):content_len]
@@ -240,6 +246,7 @@ class Upgrade_Center:
             copy_side += step
             current_side += step
             upgrade_flag += 1
+        self.driver.write_block(0, 6909555, 'last', []) # 6909555 => (ascii) ins
         
         extract_content_flag = content_len - (step * write_turns)
         extract_content = content[copy_side:(copy_side+extract_content_flag)]
@@ -262,6 +269,7 @@ class Upgrade_Center:
             copy_side += step
             current_side += step
             upgrade_flag += 1
+        self.driver.write_block(0, 6909301, 'last', []) # 6909301 => (ascii) imu
 
         extract_content_flag = content_len - (step * write_turns)
         extract_content = content[copy_side:(copy_side+extract_content_flag)]
@@ -275,7 +283,7 @@ class Upgrade_Center:
             self.driver.kill_app()
         self.driver.flash_write_pre(content)
         time.sleep(0.1)
-        if self.set_buad == True:
+        if self.use_new_baud == True:
             if self.driver.change_buad() == False:
                 error_print('Prepare baudrate change command failed\n')
                 self.driver.kill_app()
@@ -288,7 +296,7 @@ class Upgrade_Center:
         if self.driver.is_host_ready() == False:
             error_print('Host is not ready.\n')
             self.driver.kill_app()
-        if self.driver.send_boot() == False:
+        if self.driver.send_boot(self.use_new_boot) == False:
             error_print('SDK boot failed\n')
             self.driver.kill_app()
         if self.driver.send_write_flash() == False:
