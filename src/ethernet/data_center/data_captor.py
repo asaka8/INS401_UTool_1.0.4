@@ -2,7 +2,6 @@
 import time
 import struct
 import collections
-from tracemalloc import start
 
 from src.communicator.print_center import error_print
 from ...communicator.ethernet_provider import Ethernet_Dev

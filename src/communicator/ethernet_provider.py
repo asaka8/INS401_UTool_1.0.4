@@ -2,10 +2,6 @@ import os
 import sys
 import time
 import struct
-import threading
-import collections
-from cv2 import split
-from numpy import True_
 
 from scapy.all import sendp, sniff, conf, AsyncSniffer
 from .print_center import error_print, pass_print

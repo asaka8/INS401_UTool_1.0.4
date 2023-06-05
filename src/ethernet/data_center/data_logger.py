@@ -2,7 +2,6 @@ from concurrent.futures import thread
 import os
 import time
 import threading
-from xml.etree.ElementTree import TreeBuilder
 
 from .csv_creator import CsvCreator
 from .data_captor import DataCaptor
