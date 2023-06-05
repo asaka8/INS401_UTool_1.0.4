@@ -1,6 +1,5 @@
 import threading
 import time
-import psutil
 import numpy as np
 import pyqtgraph as pg
 
