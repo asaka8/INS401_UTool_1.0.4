@@ -12,8 +12,17 @@ Windows 10:
 ## Decode Functions usage
 'python .\main.py'
 
-target packet type:
-'gnss' or 'ins' or 'imu' or 'dm'
-(just can choose one packet type)
+target packet type: 'gnss' or 'ins' or 'imu' or 'dm' or 'user'
 
-the parsed data will saved in data floder
+gnss: GNSS Solution Packet (0x0a02)
+
+ins: INS Solution Packet (0x0a03)
+
+imu: IMU Solution Packet (0x0a01)
+
+dm: DM Packet (0x0a05)
+
+user: All of there 4 packets
+
+
+(the parsed data will saved in data floder)
