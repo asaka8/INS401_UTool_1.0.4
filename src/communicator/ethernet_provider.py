@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import struct
+import collections
 
 from scapy.all import sendp, sniff, conf, AsyncSniffer
 from .print_center import error_print, pass_print
