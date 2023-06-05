@@ -16,6 +16,7 @@ CMD_list = {
     'get': b'\x02\xcc', # [0xCC, 0x02]
     'save': b'\x04\xcc', # [0xCC, 0x04]
     'reset': b'\x06\xcc', # [0xCC, 0x06]
+    'get_algorithms_version': b'\x09\xaa', # [0xAA, 0x09]
     'get_save_buffer': b'\x09\x0a' #[0x0a, 0x09]
 }
 
@@ -624,6 +625,17 @@ class CommandCenter:
         else:
             error_print('INS401 MCU reset failed')
 
+    def get_algorithms_version(self):
+        command = CMD_list["get_algorithms_version"]
+        message_bytes = []
+
+        gav_response = self.ether.write_read_response(command, message_bytes)[2].decode()
+        algo_version_lst = gav_response.split(',')
+        ins_algo_ver = algo_version_lst[0].split(' ')[0]
+        rtk_algo_ver = algo_version_lst[1].split(' ')[1]
+
+        pass_print(f"INS algorithm version: {ins_algo_ver}\nRTK algorithm version: {rtk_algo_ver}")
+        
     def get_fixed_postion_buffer(self):
         command = CMD_list["get_save_buffer"]
         message_bytes = []

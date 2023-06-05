@@ -84,37 +84,27 @@ class DataLogger:
         if target_log == 'imu':
             imu_logger.create(imu_field_names)
             data_recv.connect()
-            imu_log_thread = threading.Thread(target=self.imu_log_thread)
-            imu_log_thread.start()
-            imu_log_thread.join()
+            self.imu_log_thread()
         if target_log == 'gnss':
             gnss_logger.create(gnss_field_names)
             data_recv.connect()
-            gnss_log_thread = threading.Thread(target=self.gnss_log_thread)
-            gnss_log_thread.start()
-            gnss_log_thread.join()
+            self.gnss_log_thread()
         if target_log == 'ins':
             ins_logger.create(ins_field_names)
             data_recv.connect()
-            ins_log_thread = threading.Thread(target=self.ins_log_thread)
-            ins_log_thread.start()
-            ins_log_thread.join()
+            self.ins_log_thread()
         if target_log == 'dm':
             dm_logger.create(dm_field_names)
             data_recv.connect()
-            dm_log_thread = threading.Thread(target=self.dm_log_thread)
-            dm_log_thread.start()
-            dm_log_thread.join()
+            self.dm_log_thread()
         if target_log == 'all':
             imu_logger.create(imu_field_names)
             gnss_logger.create(gnss_field_names)
             ins_logger.create(ins_field_names)
             dm_logger.create(dm_field_names)
             data_recv.connect()
-            whole_log_thread = threading.Thread(target=self.whole_log_thread)
-            whole_log_thread.start()
-            whole_log_thread.join()
-
+            self.whole_log_thread()
+            
     def imu_log_thread(self):
         while True:
             self.imu_data_log()

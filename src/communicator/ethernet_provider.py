@@ -8,7 +8,6 @@ from cv2 import split
 from numpy import True_
 
 from scapy.all import sendp, sniff, conf, AsyncSniffer
-from ..ethernet.upgrade_center.sdk_boot import XLDR_TESEO5_BOOTLOADER_CUT2, BLOCK_SIZE, CRC32_TAB
 from .print_center import error_print, pass_print
 
 PING_TYPE = [0x01, 0xcc]
@@ -143,14 +142,6 @@ class Ethernet_Dev:
         dst_mac = self.get_dst_mac()
         src_mac = self.get_src_mac()
         command_line = self.build_packet(dst_mac, src_mac, command, message)
-        # command_line_hex = command_line.hex()
-        # command_line_hex_str = ''
-        # for i in range(int(len(command_line_hex)/2)):
-        #     command_idx = command_line_hex[i*2:i*2+2] + ' '
-        #     command_line_hex_str += command_idx
-        # logf = open('./msg.log', 'w')
-        # logf.write(f'{command_line}\n\n')
-        # logf.write(f'{command_line_hex_str}\n\n')
         self.write(command_line)
 
     def write_read_response(self, command, message=[], retry=False, timeout = 1): 
