@@ -96,13 +96,13 @@ class DataLogger:
             dm_logger.create(dm_field_names)
             data_recv.connect()
             self.dm_log_thread()
-        if target_log == 'all':
+        if target_log == 'user':
             imu_logger.create(imu_field_names)
             gnss_logger.create(gnss_field_names)
             ins_logger.create(ins_field_names)
             dm_logger.create(dm_field_names)
             data_recv.connect()
-            self.whole_log_thread()
+            self.user_log_thread()
             
     def imu_log_thread(self):
         while True:
@@ -120,9 +120,9 @@ class DataLogger:
         while True:
             self.dm_data_log()
 
-    def whole_log_thread(self):
+    def user_log_thread(self):
         while True:
-            self.whole_data_log()
+            self.user_data_log()
 
     @logf_generator
     def imu_data_log():
@@ -145,6 +145,6 @@ class DataLogger:
         return ['dm', data]
 
     @logf_generator
-    def whole_data_log():
-        data = data_recv.get_whole_data()
+    def user_data_log():
+        data = data_recv.get_user_data()
         return data

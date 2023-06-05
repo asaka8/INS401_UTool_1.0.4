@@ -69,7 +69,10 @@ class DataCaptor:
         '''
         command_type = output_packet_list['imu_data'][0]
         payload_lens = output_packet_list['imu_data'][1]
-        self.ether.start_listen_data(command_type)
+        if self.ether.async_sniffer == None:
+            self.ether.start_listen_data()
+        if self.ether.async_sniffer.running == False:
+            self.ether.start_listen_data()
         while True:
             data = self.ether.read()
             if data is not None:
@@ -82,7 +85,10 @@ class DataCaptor:
         '''
         command_type = output_packet_list['gnss_data'][0]
         payload_lens = output_packet_list['gnss_data'][1]
-        self.ether.start_listen_data(command_type)
+        if self.ether.async_sniffer == None:
+            self.ether.start_listen_data()
+        if self.ether.async_sniffer.running == False:
+            self.ether.start_listen_data()
         while True:
             data = self.ether.read()
             if data is not None:
@@ -96,7 +102,10 @@ class DataCaptor:
         '''
         command_type = output_packet_list['ins_data'][0]
         payload_lens = output_packet_list['ins_data'][1]
-        self.ether.start_listen_data(command_type)
+        if self.ether.async_sniffer == None:
+            self.ether.start_listen_data()
+        if self.ether.async_sniffer.running == False:
+            self.ether.start_listen_data()
         while True:
             data = self.ether.read()
             if data is not None:
@@ -109,7 +118,10 @@ class DataCaptor:
         '''
         command_type = output_packet_list['dm_data'][0]
         payload_lens = output_packet_list['dm_data'][1]
-        self.ether.start_listen_data(command_type)
+        if self.ether.async_sniffer == None:
+            self.ether.start_listen_data()
+        if self.ether.async_sniffer.running == False:
+            self.ether.start_listen_data()
         while True:
             data = self.ether.read()
             if data is not None:
@@ -117,13 +129,15 @@ class DataCaptor:
                 latest = self.dm_parse(payload)
                 return latest
 
-    def get_whole_data(self):
+    def get_user_data(self):
         '''out put all data 
         '''
-        self.ether.start_listen_data()
+        if self.ether.async_sniffer == None:
+            self.ether.start_listen_data()
+        if self.ether.async_sniffer.running == False:
+            self.ether.start_listen_data()
         while True:
             data = self.ether.read()
-            print(data)
             if data is not None:
                 latest = self.detect_packet(data)
                 if latest is not None:
@@ -231,34 +245,8 @@ class DataCaptor:
         gps_week = data[0]
         gps_millisecs = data[1]
         device_status_bit_field = data[2]
-
-        status_bit = bin(device_status_bit_field)[2:]
-        status_bit = status_bit[::-1]
-        gnss_data_status = status_bit[11]
-        gnss_signal_status = status_bit[12]
-
         imu_temperature = data[3]
         mcu_temperature = data[4]
         gnss_chip_temperature = data[5]
         return gps_week, gps_millisecs, device_status_bit_field, imu_temperature, mcu_temperature,\
-            gnss_chip_temperature, gnss_data_status, gnss_signal_status
-  
-    def start(self):
-        self.connect()
-        data_type = input('input packet type:\n')
-        if data_type == 'imu':
-            while True:
-                data = self.get_imu_data()
-                print(data)
-        elif data_type == 'ins':
-            while True:
-                data = self.get_ins_data()
-                print(data)
-        elif data_type == 'gnss':
-            while True:
-                data = self.get_gnss_data()
-                print(data)
-        elif data_type == 'dm':
-            while True:
-                data = self.get_dm_data()
-                print(data)
+            gnss_chip_temperature

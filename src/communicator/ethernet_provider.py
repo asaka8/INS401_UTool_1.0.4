@@ -18,7 +18,9 @@ class Ethernet_Dev:
         self.read_data = b''
         self.iface_confirmed = False
         self.async_sniffer = None
-        self.receive_cache = collections.deque(maxlen=1024*16)
+        self.receive_cache = collections.deque(maxlen=1024*128)
+
+        self.countimu, self.countins = 0, 0
 
     # Connect device functions
     def find_device(self):
@@ -369,7 +371,7 @@ class Ethernet_Dev:
 
     def start_listen_data(self, filter_type=None):
         if filter_type == None:
-            filter_exp = f'ether src host {self.dst_mac} '
+            filter_exp = f'ether src host {self.dst_mac} and ether[16:2] == 0x010a or ether[16:2] == 0x020a or ether[16:2] ==  0x030a or ether[16:2] == 0x050a'
         else:
             filter_exp = f'ether src host {self.dst_mac}  and ether[16:2] == {filter_type}'
         
@@ -382,9 +384,10 @@ class Ethernet_Dev:
         '''this function will stop sniffer thread when the target packet is found
         '''
         data = None
+        # print(len(self.receive_cache))
         if len(self.receive_cache) > 0:
             data = self.receive_cache.pop()
-            self.async_sniffer.stop()
+            # self.async_sniffer.stop()
             return data
         return data
 
@@ -399,6 +402,16 @@ class Ethernet_Dev:
 
     def handle_catch_packet(self, packet):
         packet_raw = bytes(packet)[12:]
+        # print(f'imu: {self.countimu}, ins: {self.countins}', end='\r')
+        if packet_raw.hex()[8:12] == '010a':
+            self.countimu += 1
+        if packet_raw.hex()[8:12] == '020a':
+            self.countimu += 1
+        if packet_raw.hex()[8:12] == '030a':
+            self.countins += 1
+        if packet_raw.hex()[8:12] == '050a':
+            self.countins += 1
+        packet_raw.hex()[8:12]
         self.receive_cache.append(packet_raw[2:])
         # pass_print(packet_raw)
 
