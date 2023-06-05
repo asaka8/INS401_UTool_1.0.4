@@ -79,7 +79,7 @@ class DataLogger:
         ins_logger = CsvCreator(ins_data_file)
         dm_logger = CsvCreator(dm_data_file)
 
-        target_log = input('targrt packet type:')
+        target_log = input('target packet type:')
         if target_log == 'imu':
             imu_logger.create(imu_field_names)
             data_recv.connect()
