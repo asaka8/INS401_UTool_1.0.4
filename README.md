@@ -13,7 +13,7 @@ Windows 10:
 'python .\main.py'
 
 target packet type:
-<gnss> or <ins> or <imu> or <dm>
+'gnss' or 'ins' or 'imu' or 'dm'
 (just can choose one packet type)
 
 the parsed data will saved in data floder
